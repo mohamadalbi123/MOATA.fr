@@ -19,6 +19,10 @@ const authNote = document.getElementById("authNote");
 const googleAuthButton = document.getElementById("googleAuthButton");
 const brandColorPicker = document.querySelector("input[name='brandColorPicker']");
 const customBrandColor = document.querySelector("input[name='customBrandColor']");
+const headerActions = document.querySelector(".header-actions");
+
+updateAuthHeader();
+guardBuilderForExistingAssistant();
 
 if (storySteps.length) {
   let activeStoryStep = 0;
@@ -91,10 +95,6 @@ if (requestForm) {
       return;
     }
     const savedAssistant = await saveAssistant(assistant);
-    downloadJson({
-      filename: `${savedAssistant.id}-assistant-setup.json`,
-      payload: savedAssistant
-    });
     requestNote.textContent = "Assistant setup saved. Opening your dashboard...";
     window.location.href = `dashboard.html?id=${encodeURIComponent(savedAssistant.id)}`;
   });
@@ -141,10 +141,11 @@ function collectFormData(targetForm) {
   const data = {};
   const formData = new FormData(targetForm);
   for (const [key, value] of formData.entries()) {
+    const cleanValue = value instanceof File ? value.name : value;
     if (data[key]) {
-      data[key] = `${data[key]}, ${value}`;
+      data[key] = `${data[key]}, ${cleanValue}`;
     } else {
-      data[key] = value;
+      data[key] = cleanValue;
     }
   }
   return data;
@@ -276,6 +277,35 @@ function loadScript(src) {
   });
 }
 
+async function updateAuthHeader() {
+  if (!headerActions) return;
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return;
+  const userName = getUserDisplayName(currentUser) || "Account";
+  headerActions.innerHTML = `
+    <a class="text-link" href="dashboard.html">Dashboard</a>
+    <a class="text-link" href="dashboard.html?view=account">${escapeHtml(userName)}</a>
+    <button class="button button-light header-logout" type="button">Logout</button>
+  `;
+  headerActions.querySelector(".header-logout")?.addEventListener("click", signOutUser);
+}
+
+async function signOutUser() {
+  const supabase = await getSupabaseClient();
+  if (supabase) await supabase.auth.signOut();
+  localStorage.removeItem("moataUser");
+  window.location.href = "index.html";
+}
+
+async function guardBuilderForExistingAssistant() {
+  if (!requestForm) return;
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return;
+  const assistants = await getAssistants();
+  if (!assistants.length || !requestNote) return;
+  requestNote.textContent = "You already have one MOATA assistant. Submitting this form will update your existing assistant setup.";
+}
+
 function updateQuestionCards(industry) {
   questionCards.forEach((card) => {
     const industries = card.dataset.industries || "";
@@ -330,20 +360,26 @@ async function saveAssistant(assistant) {
   const supabase = await getSupabaseClient();
   const currentUser = await getCurrentUser();
   if (supabase && currentUser) {
-    let insertRow = toAssistantRow(assistant, currentUser.id);
-    let { data, error } = await supabase
+    const { data: existingRows } = await supabase
       .from("assistants")
-      .insert(insertRow)
-      .select()
-      .single();
+      .select("id")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const existingId = existingRows?.[0]?.id || null;
+    if (existingId) assistant.id = existingId;
+    let insertRow = toAssistantRow(assistant, currentUser.id);
+    let query = existingId
+      ? supabase.from("assistants").update(insertRow).eq("id", existingId)
+      : supabase.from("assistants").insert(insertRow);
+    let { data, error } = await query.select().single();
     if (error && (error.message?.includes("brand_color") || error.message?.includes("assistant_language"))) {
       delete insertRow.brand_color;
       delete insertRow.assistant_language;
-      const retry = await supabase
-        .from("assistants")
-        .insert(insertRow)
-        .select()
-        .single();
+      const retryQuery = existingId
+        ? supabase.from("assistants").update(insertRow).eq("id", existingId)
+        : supabase.from("assistants").insert(insertRow);
+      const retry = await retryQuery.select().single();
       data = retry.data;
       error = retry.error;
     }
@@ -357,9 +393,9 @@ async function saveAssistant(assistant) {
 }
 
 function saveAssistantLocal(assistant) {
-  const assistants = getLocalAssistants().filter((item) => item.id !== assistant.id);
-  assistants.unshift(assistant);
-  localStorage.setItem("moataAssistants", JSON.stringify(assistants));
+  const existing = getLocalAssistants()[0];
+  const assistantToSave = existing ? { ...assistant, id: existing.id } : assistant;
+  localStorage.setItem("moataAssistants", JSON.stringify([assistantToSave]));
 }
 
 async function getAssistants() {
@@ -369,6 +405,7 @@ async function getAssistants() {
     const { data, error } = await supabase
       .from("assistants")
       .select("*")
+      .eq("user_id", currentUser.id)
       .order("created_at", { ascending: false });
     if (!error && data) return data.map(fromAssistantRow);
   }
@@ -462,12 +499,14 @@ async function getPublicAssistant(id) {
 async function renderDashboard() {
   const assistant = await getSelectedAssistant();
   const currentUser = await getCurrentUser();
+  const userName = getUserDisplayName(currentUser);
+  const userEmail = currentUser?.email || "No email available";
   if (!assistant) {
     dashboardRoot.innerHTML = `
       <section class="dashboard-empty">
-        <p class="eyebrow">My AI Assistant</p>
-        <h1>No assistant yet.</h1>
-        <p>Start by building your first assistant. After setup, this dashboard will show your public link and embed code.</p>
+        <p class="eyebrow">Dashboard</p>
+        <h1>Welcome${userName ? `, ${escapeHtml(userName)}` : ""}.</h1>
+        <p>Your account is ready. Start by building your first AI diagnostic assistant. After setup, your dashboard will show the public link, embed code, billing, and assistant details.</p>
         <a class="button" href="request.html">Build My Assistant</a>
       </section>
     `;
@@ -475,51 +514,205 @@ async function renderDashboard() {
   }
 
   const publicLink = new URL(`assistant.html?id=${encodeURIComponent(assistant.id)}`, window.location.href).href;
-  const embedCode = `<script src="https://moata.com/widget.js" data-assistant="${assistant.id}"></script>`;
+  const embedCode = `<script src="https://www.moata.fr/widget.js" data-assistant="${assistant.id}"></script>`;
+  const view = new URLSearchParams(window.location.search).get("view") || "overview";
+  const sectionMap = {
+    overview: renderDashboardOverview,
+    account: renderDashboardAccount,
+    assistant: renderDashboardAssistant,
+    delivery: renderDashboardDelivery,
+    billing: renderDashboardBilling
+  };
+  const activeSection = sectionMap[view] || renderDashboardOverview;
+  const dashboardContext = { assistant, currentUser, userName, userEmail, publicLink, embedCode };
+
   dashboardRoot.innerHTML = `
-    <section class="dashboard-hero">
+    <section class="dashboard-hero dashboard-hero-compact">
       <div>
-        <p class="eyebrow">My AI Assistant</p>
-        <h1>${escapeHtml(assistant.business.name)}</h1>
-        <p>${escapeHtml(assistant.setup.industry)} assistant · ${escapeHtml(assistant.status)}</p>
+        <p class="eyebrow">Client Portal</p>
+        <h1>${escapeHtml(getDashboardTitle(view, userName || assistant.business.name))}</h1>
+        <p>${escapeHtml(getDashboardDescription(view))}</p>
       </div>
-      <a class="button" href="request.html">Build Another</a>
+      <a class="button" href="${getDashboardUrl("assistant", assistant.id)}">My Assistant</a>
     </section>
-    <section class="dashboard-grid">
+    ${renderDashboardNav(view, assistant.id)}
+    ${activeSection(dashboardContext)}
+  `;
+  bindCopyButtons();
+  bindCheckoutButton(currentUser);
+  bindAccountActions(currentUser);
+}
+
+function renderDashboardNav(activeView, assistantId) {
+  const navItems = [
+    ["overview", "Overview"],
+    ["assistant", "My AI Assistant"],
+    ["delivery", "Public Link & Code"],
+    ["billing", "Billing"],
+    ["account", "Account Settings"]
+  ];
+  return `
+    <nav class="dashboard-tabs" aria-label="Dashboard sections">
+      ${navItems.map(([view, label]) => {
+        const href = getDashboardUrl(view, assistantId);
+        return `<a class="${view === activeView ? "active" : ""}" href="${href}">${label}</a>`;
+      }).join("")}
+    </nav>
+  `;
+}
+
+function renderDashboardOverview({ assistant, userName, userEmail, publicLink }) {
+  return `
+    <section class="dashboard-overview-grid">
+      ${renderDashboardCard("My AI Assistant", assistant.business.name, `${assistant.setup.industry} · ${assistant.status}`, getDashboardUrl("assistant", assistant.id))}
+      ${renderDashboardCard("Public Link & Code", "Install or share", "Hosted page, website embed code, and preview link.", getDashboardUrl("delivery", assistant.id))}
+      ${renderDashboardCard("Billing", "€39 / month", "Subscription, checkout, and plan details.", getDashboardUrl("billing", assistant.id))}
+      ${renderDashboardCard("Account Settings", userName || "MOATA Client", userEmail, getDashboardUrl("account", assistant.id))}
+    </section>
+    <section class="dashboard-panel dashboard-overview-strip">
+      <div>
+        <p class="eyebrow">Quick Preview</p>
+        <h2>${escapeHtml(assistant.business.name)} assistant is ready to test.</h2>
+        <p>Open the public page, answer the diagnostic, and confirm that the assistant recommends only services you offer.</p>
+      </div>
+      <a class="button" href="${publicLink}">Open Assistant</a>
+    </section>
+  `;
+}
+
+function renderDashboardCard(label, title, description, href) {
+  return `
+    <a class="dashboard-action-card" href="${href}">
+      <span class="eyebrow">${escapeHtml(label)}</span>
+      <strong>${escapeHtml(title)}</strong>
+      <small>${escapeHtml(description)}</small>
+    </a>
+  `;
+}
+
+function renderDashboardAccount({ currentUser, userName, userEmail }) {
+  const provider = currentUser?.app_metadata?.provider || "email";
+  return `
+    <section class="dashboard-single">
       <article class="dashboard-panel">
-        <h2>Public diagnostic link</h2>
-        <p>Use this if the business does not have a website. Send it by WhatsApp, Instagram, SMS, email, or QR code.</p>
-        <textarea readonly>${publicLink}</textarea>
-        <button class="button copy-button" data-copy="${escapeHtml(publicLink)}" type="button">Copy Link</button>
-        <a class="button button-light" href="${publicLink}">Open Preview</a>
+        <p class="eyebrow">Account Settings</p>
+        <h2>${escapeHtml(userName || "MOATA Client")}</h2>
+        <dl class="dashboard-details">
+          <div><dt>Name</dt><dd>${escapeHtml(userName || "Not provided")}</dd></div>
+          <div><dt>Email</dt><dd>${escapeHtml(userEmail)}</dd></div>
+          <div><dt>Login method</dt><dd>${escapeHtml(provider)}</dd></div>
+          <div><dt>Password</dt><dd>Managed securely by Supabase authentication. Use password reset if you want to change it.</dd></div>
+        </dl>
+        <div class="compact-actions">
+          <button class="button" id="passwordResetButton" type="button">Send Password Reset</button>
+          <a class="button button-light" href="${getDashboardUrl("overview")}">Back to Dashboard</a>
+        </div>
+        <p class="form-note" id="accountNote" aria-live="polite"></p>
       </article>
+    </section>
+  `;
+}
+
+function renderDashboardAssistant({ assistant, publicLink }) {
+  return `
+    <section class="dashboard-single">
       <article class="dashboard-panel">
-        <h2>Website embed code</h2>
-        <p>For WordPress, Wix, Shopify, Squarespace, or custom websites, this is the code the business will paste.</p>
-        <textarea readonly>${escapeHtml(embedCode)}</textarea>
-        <button class="button copy-button" data-copy="${escapeHtml(embedCode)}" type="button">Copy Code</button>
-      </article>
-      <article class="dashboard-panel">
-        <h2>Assistant setup</h2>
-        <dl>
-          <div><dt>Avatar</dt><dd>${escapeHtml(assistant.setup.assistantAppearance)}</dd></div>
+        <div class="dashboard-assistant-top">
+          <img class="dashboard-avatar" src="${getAvatarPath(assistant.setup.assistantAppearance)}" alt="" />
+          <div>
+            <p class="eyebrow">My AI Assistant</p>
+            <h2>${escapeHtml(assistant.business.name)}</h2>
+            <p>${escapeHtml(assistant.setup.industry)} · ${escapeHtml(assistant.setup.assistantLanguage || "English")} · ${escapeHtml(assistant.status)}</p>
+          </div>
+        </div>
+        <dl class="dashboard-details dashboard-details-grid">
+          <div><dt>Avatar</dt><dd>${escapeHtml(assistant.setup.assistantAppearance || "-")}</dd></div>
           <div><dt>Brand color</dt><dd><span class="color-dot" style="--dot: ${sanitizeColor(assistant.setup.brandColor || "#050505")}"></span>${escapeHtml(assistant.setup.brandColor || "#050505")}</dd></div>
-          <div><dt>Language</dt><dd>${escapeHtml(assistant.setup.assistantLanguage || "English")}</dd></div>
           <div><dt>Photo upload</dt><dd>${escapeHtml(assistant.setup.photoUpload || "-")}</dd></div>
           <div><dt>Launch style</dt><dd>${escapeHtml(assistant.setup.launchStyle || "-")}</dd></div>
           <div><dt>Questions</dt><dd>${escapeHtml(assistant.setup.questionCards || "-")}</dd></div>
+          <div><dt>Services</dt><dd>${escapeHtml(assistant.setup.services || "-")}</dd></div>
+          <div><dt>Rules to avoid</dt><dd>${escapeHtml(assistant.setup.rules || "-")}</dd></div>
         </dl>
+        <div class="compact-actions">
+          <a class="button" href="${publicLink}">Test Assistant</a>
+          <a class="button button-light" href="request.html">Update Assistant Setup</a>
+        </div>
       </article>
-      <article class="dashboard-panel">
-        <h2>Activate subscription</h2>
-        <p>Start the €39/month MOATA plan to use the live assistant, hosted diagnostic page, website embed code, and future updates.</p>
-        <button class="button" id="checkoutButton" type="button">Continue to Checkout</button>
+    </section>
+  `;
+}
+
+function renderDashboardDelivery({ publicLink, embedCode }) {
+  return `
+    <section class="dashboard-single">
+      <article class="dashboard-panel dashboard-delivery-card">
+        <p class="eyebrow">Delivery</p>
+        <h2>Public link and embed code</h2>
+        <div class="dashboard-code-row">
+          <div>
+            <strong>Hosted diagnostic page</strong>
+            <p>Use this for WhatsApp, Instagram, QR codes, or businesses without a website.</p>
+          </div>
+          <button class="button button-light copy-button" data-copy="${escapeHtml(publicLink)}" type="button">Copy Link</button>
+        </div>
+        <code class="dashboard-code">${escapeHtml(publicLink)}</code>
+        <div class="dashboard-code-row">
+          <div>
+            <strong>Website embed</strong>
+            <p>Small code for WordPress, Wix, Shopify, Squarespace, or custom websites.</p>
+          </div>
+          <button class="button button-light copy-button" data-copy="${escapeHtml(embedCode)}" type="button">Copy Code</button>
+        </div>
+        <code class="dashboard-code">${escapeHtml(embedCode)}</code>
+      </article>
+    </section>
+  `;
+}
+
+function renderDashboardBilling() {
+  return `
+    <section class="dashboard-single">
+      <article class="dashboard-panel dashboard-billing-card">
+        <p class="eyebrow">Billing</p>
+        <h2>€39 / month</h2>
+        <p>Includes your AI diagnostic assistant, hosted diagnostic page, website embed code, business dashboard, lead management, email notifications, custom branding, updates, and email support.</p>
+        <div class="compact-actions">
+          <button class="button" id="checkoutButton" type="button">Continue to Checkout</button>
+          <a class="button button-light" href="${getDashboardUrl("overview")}">Back to Dashboard</a>
+        </div>
         <p class="form-note" id="checkoutNote" aria-live="polite"></p>
       </article>
     </section>
   `;
-  bindCopyButtons();
-  bindCheckoutButton(currentUser);
+}
+
+function getDashboardUrl(view, assistantId = new URLSearchParams(window.location.search).get("id")) {
+  const params = new URLSearchParams();
+  if (assistantId) params.set("id", assistantId);
+  if (view && view !== "overview") params.set("view", view);
+  const query = params.toString();
+  return query ? `dashboard.html?${query}` : "dashboard.html";
+}
+
+function getDashboardTitle(view, fallbackName) {
+  const titles = {
+    account: "Account Settings",
+    assistant: "My AI Assistant",
+    delivery: "Public Link & Code",
+    billing: "Billing"
+  };
+  return titles[view] || fallbackName;
+}
+
+function getDashboardDescription(view) {
+  const descriptions = {
+    account: "Manage your profile, email, login method, and password reset.",
+    assistant: "Review your assistant setup, questions, avatar, rules, services, and language.",
+    delivery: "Copy your hosted diagnostic link or website embed code.",
+    billing: "Manage the MOATA monthly plan and secure checkout."
+  };
+  return descriptions[view] || "Choose what you want to manage from your MOATA client portal.";
 }
 
 async function renderAssistantPreview() {
@@ -554,17 +747,25 @@ async function renderAssistantPreview() {
   assistantPreviewRoot.innerHTML = `
     <section class="assistant-shell" style="--assistant-accent: ${brandColor}">
       <div class="assistant-panel">
-        <img class="assistant-photo" src="${avatar}" alt="" />
-        <p class="eyebrow">${escapeHtml(data.setup.industry)}</p>
-        <h1>${escapeHtml(data.business.name)} Assistant</h1>
-        <p>${escapeHtml(getAssistantIntro(data.setup.assistantLanguage))}</p>
+        <div class="assistant-mini">
+          <img class="assistant-avatar-icon" src="${avatar}" alt="" />
+          <div>
+            <p class="eyebrow">${escapeHtml(data.setup.industry)}</p>
+            <h1>${escapeHtml(data.business.name)} Assistant</h1>
+          </div>
+        </div>
+        <p class="assistant-lede">${escapeHtml(getAssistantIntro(data.setup.assistantLanguage))}</p>
+        <div class="assistant-note">
+          <strong>Private consultation</strong>
+          <span>Your answers help the business recommend the right service from its real offer.</span>
+        </div>
       </div>
       <form class="assistant-diagnostic" id="assistantDiagnosticForm">
-        ${questions.map((question, index) => `
-          <label>${escapeHtml(question)}
-            <input name="${escapeHtml(question)}" ${index === 0 ? "required" : ""} placeholder="Your answer" />
-          </label>
-        `).join("")}
+        <div class="assistant-form-header">
+          <p class="eyebrow">Step 1</p>
+          <h2>Tell us what you need.</h2>
+        </div>
+        ${questions.map((question, index) => renderQuestionControl(question, index === 0)).join("")}
         ${data.setup.customerFreeText === "Yes" ? `<label>Tell us more<textarea name="Additional comments" placeholder="Describe your need in your own words"></textarea></label>` : ""}
         <button class="button" type="submit" id="assistantRecommend">${escapeHtml(getRecommendationButtonText(data.setup.assistantLanguage))}</button>
       </form>
@@ -592,10 +793,125 @@ async function renderAssistantPreview() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || payload.error || "Recommendation failed");
       text.textContent = payload.recommendation;
+      if (payload.warning) {
+        text.textContent += `\n\nNote: ${payload.warning}`;
+      }
     } catch (error) {
-      text.textContent = "We could not create an AI recommendation right now. Please contact the business or try again.";
+      text.textContent = `We could not create an AI recommendation right now. Please contact the business or try again. (${error.message})`;
     }
   });
+}
+
+function renderQuestionControl(question, required = false) {
+  const name = escapeHtml(question);
+  const requiredAttr = required ? "required" : "";
+  const normalized = question.toLowerCase();
+  const label = escapeHtml(question);
+
+  if (normalized === "gender") {
+    return selectControl(label, name, requiredAttr, ["", "Female", "Male", "Non-binary", "Prefer not to say"]);
+  }
+  if (normalized === "preferred contact method" || normalized === "contact method") {
+    return selectControl(label, name, requiredAttr, ["", "Email", "Phone", "WhatsApp", "SMS"]);
+  }
+  if (normalized === "skin type") {
+    return selectControl(label, name, requiredAttr, ["", "Normal", "Dry", "Oily", "Combination", "Sensitive", "Not sure"]);
+  }
+  if (normalized === "goal" || normalized.includes("what result do you want") || normalized.includes("what do you want to achieve")) {
+    return selectControl(label, name, requiredAttr, ["", "Fix a problem", "Improve appearance", "Maintenance", "Emergency help", "Get advice", "Not sure"]);
+  }
+  if (normalized === "main concern" || normalized.includes("biggest skin concern") || normalized.includes("what is bothering you")) {
+    return selectControl(label, name, requiredAttr, ["", "Pain or discomfort", "Damage", "Appearance", "Sensitive reaction", "New problem", "Maintenance", "Not sure"]);
+  }
+  if (normalized.includes("how long") || normalized.includes("when did it start") || normalized.includes("when did symptoms begin")) {
+    return selectControl(label, name, requiredAttr, ["", "Today", "A few days", "1-2 weeks", "More than 1 month", "More than 6 months", "Not sure"]);
+  }
+  if (normalized === "hair length") {
+    return selectControl(label, name, requiredAttr, ["", "Short", "Medium", "Long", "Very long", "Not sure"]);
+  }
+  if (normalized === "hair thickness") {
+    return selectControl(label, name, requiredAttr, ["", "Fine", "Medium", "Thick", "Not sure"]);
+  }
+  if (normalized.includes("hair type")) {
+    return selectControl(label, name, requiredAttr, ["", "Straight", "Wavy", "Curly", "Coily", "Not sure"]);
+  }
+  if (normalized.includes("property type")) {
+    return selectControl(label, name, requiredAttr, ["", "House", "Apartment", "Office", "Commercial space", "Other"]);
+  }
+  if (normalized.includes("house or apartment")) {
+    return selectControl(label, name, requiredAttr, ["", "House", "Apartment", "Other"]);
+  }
+  if (normalized.includes("pain level")) {
+    return selectControl(label, name, requiredAttr, ["", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+  }
+  if (isYesNoQuestion(normalized)) {
+    return selectControl(label, name, requiredAttr, ["", "Yes", "No", "Not sure"]);
+  }
+  if (normalized.includes("urgency") || normalized.includes("urgent")) {
+    return selectControl(label, name, requiredAttr, ["", "Low", "Medium", "High", "Emergency"]);
+  }
+  if (normalized === "age" || normalized.includes("bedrooms") || normalized.includes("employees") || normalized.includes("height") || normalized.includes("weight") || normalized.includes("mileage") || normalized.includes("year")) {
+    return `<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter number" /></label>`;
+  }
+  if (normalized === "budget" || normalized.includes("annual revenue")) {
+    return `<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter amount" /></label>`;
+  }
+  if (normalized.includes("preferred date") || normalized.includes("event date") || normalized.includes("deadline") || normalized.includes("court date")) {
+    return `<label>${label}<input type="date" name="${name}" ${requiredAttr} /></label>`;
+  }
+  if (normalized.includes("preferred time")) {
+    return `<label>${label}<input type="time" name="${name}" ${requiredAttr} /></label>`;
+  }
+  if (normalized.includes("upload photo") || normalized.includes("inspiration photo")) {
+    return `<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="image/*" /></label>`;
+  }
+  if (normalized.includes("upload video")) {
+    return `<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="video/*" /></label>`;
+  }
+  if (normalized.includes("upload document") || normalized.includes("documents")) {
+    return `<label>${label}<input type="file" name="${name}" ${requiredAttr} /></label>`;
+  }
+
+  return `<label>${label}<input name="${name}" ${requiredAttr} placeholder="Your answer" /></label>`;
+}
+
+function isYesNoQuestion(normalized) {
+  const yesNoSignals = [
+    "do you have",
+    "are you",
+    "have you",
+    "is your",
+    "upload",
+    "sensitive",
+    "allerg",
+    "pregnant",
+    "breastfeeding",
+    "dyed",
+    "bleached",
+    "damaged",
+    "fever",
+    "swelling",
+    "bleeding",
+    "broken",
+    "sensitivity",
+    "injury",
+    "surgery",
+    "pets",
+    "vaccinated",
+    "financing approved",
+    "vat registered"
+  ];
+  return yesNoSignals.some((signal) => normalized.includes(signal)) && !normalized.includes("upload photo") && !normalized.includes("upload video") && !normalized.includes("upload document");
+}
+
+function selectControl(label, name, requiredAttr, options) {
+  return `
+    <label>${label}
+      <select name="${name}" ${requiredAttr}>
+        ${options.map((option) => `<option value="${escapeHtml(option)}">${option ? escapeHtml(option) : "Select one"}</option>`).join("")}
+      </select>
+    </label>
+  `;
 }
 
 function sanitizeColor(color = "#050505") {
@@ -692,6 +1008,30 @@ function bindCheckoutButton(currentUser) {
       note.textContent = "Checkout is not ready yet. Check Stripe keys and price ID in Vercel.";
     }
   });
+}
+
+function bindAccountActions(currentUser) {
+  document.getElementById("passwordResetButton")?.addEventListener("click", async () => {
+    const note = document.getElementById("accountNote");
+    const email = currentUser?.email || "";
+    if (!email) {
+      note.textContent = "No email address is available for this account.";
+      return;
+    }
+    const supabase = await getSupabaseClient();
+    if (!supabase) {
+      note.textContent = "Password reset is available on the live MOATA site after Supabase is connected.";
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: new URL("login.html", window.location.href).href
+    });
+    note.textContent = error ? error.message : "Password reset email sent.";
+  });
+}
+
+function getUserDisplayName(user) {
+  return user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split("@")[0] || "";
 }
 
 function escapeHtml(value = "") {

@@ -1,7 +1,7 @@
 (function () {
   const script = document.currentScript;
   const assistantId = script?.dataset.assistant || "demo";
-  const baseUrl = script?.dataset.baseUrl || "https://moata.com";
+  const baseUrl = script?.dataset.baseUrl || "https://www.moata.fr";
   const link = `${baseUrl}/assistant.html?id=${encodeURIComponent(assistantId)}`;
   const button = document.createElement("a");
   button.href = link;

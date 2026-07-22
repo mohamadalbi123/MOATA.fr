@@ -30,10 +30,18 @@ export default async function handler(request, response) {
       return;
     }
 
-    const recommendation = await getAiRecommendation(assistant, answers);
-    await saveLead(assistantId, answers, recommendation);
+    let warning = "";
+    let recommendation;
+    try {
+      recommendation = await getAiRecommendation(assistant, answers);
+    } catch (error) {
+      warning = "The live AI model could not complete this request, so MOATA used a safe service-only fallback.";
+      recommendation = getFallbackRecommendation(assistant, answers);
+    }
 
-    response.status(200).json({ recommendation });
+    await saveLead(assistantId, answers, recommendation).catch(() => {});
+
+    response.status(200).json({ recommendation, warning });
   } catch (error) {
     response.status(500).json({
       error: "Could not create recommendation",
@@ -96,11 +104,17 @@ async function getAiRecommendation(assistant, answers) {
           text: [
             "You are the MOATA AI Diagnostic Assistant engine.",
             "MOATA builds AI diagnostic assistants for service businesses.",
+            "You are not a general chatbot. You are a guided consultation system that turns structured customer answers into a service recommendation.",
             "Your job is to guide customers toward the correct service or product using only the business information provided.",
+            "First inspect allowedServices. Recommend exactly one primary service, and optionally one secondary service, from allowedServices only.",
+            "If allowedServices is empty, unclear, or does not contain a safe match, do not invent. Tell the customer to contact the business so the team can confirm the right appointment.",
+            "Use customerAnswers as structured data. Dropdown answers such as gender, skin type, urgency, contact method, pain level, budget, and uploaded file names are intentional signals.",
             "Never invent services, prices, guarantees, medical/legal/financial conclusions, or unavailable offers.",
             "Respect industry risk. For medical, dental, legal, veterinary, electrical, plumbing, construction, or other safety-sensitive areas, do not diagnose or give dangerous instructions. Recommend the appropriate appointment/service type and tell the customer to contact the professional for urgent or uncertain cases.",
+            "For beauty, skincare, hair, and wellness, do not promise results and do not make medical claims. Explain the fit using the customer's concern, preferences, and selected answers.",
             "If the customer needs urgent help, says there is danger, severe pain, emergency damage, or health/safety risk, recommend contacting the business/emergency service directly.",
             "Answer in the assistantLanguage provided by the business.",
+            "Never say 'as an AI'.",
             "Return concise customer-facing text with: recommended service, why it fits, what to do next."
           ].join(" ")
         }
@@ -151,4 +165,24 @@ async function getAiRecommendation(assistant, answers) {
 
   const data = await response.json();
   return data.output_text || "Please contact the business so they can recommend the right service.";
+}
+
+function getFallbackRecommendation(assistant, answers = {}) {
+  const services = String(assistant.services || "")
+    .split(/\n|,/)
+    .map((service) => service.trim())
+    .filter(Boolean);
+  const primaryService = services[0] || "professional consultation";
+  const businessName = assistant.business_name || "the business";
+  const answerSummary = Object.entries(answers)
+    .filter(([, value]) => String(value || "").trim())
+    .slice(0, 4)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join("; ");
+
+  return [
+    `Recommended service: ${primaryService}.`,
+    `Why it fits: based on your answers${answerSummary ? ` (${answerSummary})` : ""}, this is the closest option from ${businessName}'s listed services.`,
+    "Next step: book an appointment or contact the business so the team can confirm the final recommendation."
+  ].join("\n");
 }
