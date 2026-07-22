@@ -47,10 +47,6 @@ if (wizardSteps.length) {
 
   wizardNext?.addEventListener("click", () => {
     if (!validateWizardStep(wizardSteps[currentWizardStep])) return;
-    if (currentWizardStep === wizardSteps.length - 1) {
-      requestForm?.requestSubmit();
-      return;
-    }
     currentWizardStep = Math.min(wizardSteps.length - 1, currentWizardStep + 1);
     showWizardStep(currentWizardStep);
   });
@@ -719,11 +715,11 @@ function showWizardStep(index) {
 
   if (wizardBack) wizardBack.disabled = index === 0;
   if (wizardNext) {
-    wizardNext.hidden = false;
-    wizardNext.textContent = index === wizardSteps.length - 1 ? "Save Assistant" : "Next";
+    wizardNext.hidden = index === wizardSteps.length - 1;
+    wizardNext.textContent = "Next";
   }
   if (formActions) {
-    formActions.hidden = true;
+    formActions.hidden = index !== wizardSteps.length - 1;
   }
 }
 
