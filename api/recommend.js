@@ -43,7 +43,8 @@ export default async function handler(request, response) {
       recommendation = getFallbackRecommendation(assistant, answers);
     }
 
-    await saveLead(assistantId, answers, recommendation).catch(() => {});
+    await saveLead(assistant.id || assistantId, answers, recommendation).catch(() => {});
+    await notifyBusiness(assistant, answers, recommendation).catch(() => {});
 
     response.status(200).json({ recommendation, warning });
   } catch (error) {
@@ -89,14 +90,14 @@ async function getAssistant(id) {
 
 async function saveLead(assistantId, answers, recommendation) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!supabaseUrl || !supabaseAnonKey) return;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return;
 
   await fetch(`${supabaseUrl}/rest/v1/customer_leads`, {
     method: "POST",
     headers: {
-      apikey: supabaseAnonKey,
-      Authorization: `Bearer ${supabaseAnonKey}`,
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
       "Content-Type": "application/json",
       Prefer: "return=minimal"
     },
@@ -107,6 +108,39 @@ async function saveLead(assistantId, answers, recommendation) {
       customer_phone: answers.Phone || answers.phone || null,
       answers,
       recommendation
+    })
+  });
+}
+
+async function notifyBusiness(assistant, answers, recommendation) {
+  const resendKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.MOATA_EMAIL_FROM;
+  const toEmail = assistant.notification_email || assistant.business_email;
+  if (!resendKey || !fromEmail || !toEmail) return;
+  const answerSummary = Object.entries(answers || {})
+    .filter(([, value]) => String(value || "").trim())
+    .map(([key, value]) => `${key}: ${value}`)
+    .join("\n");
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${resendKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      from: fromEmail,
+      to: [toEmail],
+      subject: `New MOATA diagnostic lead - ${assistant.business_name || "Assistant"}`,
+      text: [
+        `Business: ${assistant.business_name || ""}`,
+        "",
+        "Customer answers:",
+        answerSummary || "No answers provided.",
+        "",
+        "Recommendation:",
+        recommendation
+      ].join("\n")
     })
   });
 }
@@ -135,7 +169,8 @@ async function getAiRecommendation(assistant, answers) {
             "For medical, dental, veterinary, legal, accounting, and financial use cases: recommend the right appointment category only. Do not name a disease, legal conclusion, tax conclusion, treatment plan, medication, dosage, or guaranteed outcome.",
             "For beauty, skincare, hair, and wellness, do not promise results and do not make medical claims. Explain the fit using the customer's concern, preferences, and selected answers.",
             "If the customer needs urgent help, says there is danger, severe pain, emergency damage, or health/safety risk, recommend contacting the business/emergency service directly.",
-            "If the business provides a bookingUrl, make the next step booking-focused. If the business provides WhatsApp, it is acceptable to suggest contacting the business by WhatsApp for clarification.",
+            "Use the business leadDestination for the Next step label when possible: Booking link, WhatsApp booking, Phone call, Directions, Email follow-up, or Business follow-up.",
+            "If the chosen destination is unavailable because the business did not provide the needed phone, email, address, WhatsApp, or booking URL, tell the customer to contact the business directly.",
             "Answer in the assistantLanguage provided by the business.",
             "Never say 'as an AI'.",
             "Return concise customer-facing text with clear labels: Recommended service, Why this fits, Important note, Next step."
@@ -153,10 +188,12 @@ async function getAiRecommendation(assistant, answers) {
               name: assistant.business_name,
               industry: assistant.industry,
               website: assistant.business_website,
+              email: assistant.business_email,
               whatsapp: assistant.whatsapp,
               city: assistant.city,
               location: assistant.location,
-              bookingUrl: assistant.booking_url
+              bookingUrl: assistant.booking_url,
+              leadDestination: assistant.lead_destination || "Booking link"
             },
             assistantLanguage: assistant.assistant_language || "English",
             allowedServices: assistant.services,
@@ -207,6 +244,17 @@ function getFallbackRecommendation(assistant, answers = {}) {
   return [
     `Recommended service: ${primaryService}.`,
     `Why it fits: based on your answers${answerSummary ? ` (${answerSummary})` : ""}, this is the closest option from ${businessName}'s listed services.`,
-    "Next step: book an appointment or contact the business so the team can confirm the final recommendation."
+    `Next step: ${getFallbackNextStep(assistant)}.`
   ].join("\n");
+}
+
+function getFallbackNextStep(assistant = {}) {
+  const destination = assistant.lead_destination || "Booking link";
+  if (destination === "WhatsApp booking" && assistant.whatsapp) return "send the business a WhatsApp message so the team can confirm your booking";
+  if (destination === "Phone call" && assistant.phone) return "call the business so the team can confirm your appointment";
+  if (destination === "Directions" && (assistant.location || assistant.city)) return "get directions and contact the business before visiting if needed";
+  if (destination === "Email follow-up" && assistant.business_email) return "email the business so the team can follow up";
+  if (destination === "Business follow-up") return "the business can use your submitted answers to follow up with you";
+  if (assistant.booking_url) return "book an appointment using the booking link";
+  return "contact the business so the team can confirm the final recommendation";
 }

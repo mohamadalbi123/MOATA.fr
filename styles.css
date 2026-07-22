@@ -2289,6 +2289,62 @@ textarea {
   vertical-align: -1px;
 }
 
+.dashboard-leads {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.lead-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.lead-card {
+  border: 1px solid var(--line);
+  background: var(--white);
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.lead-card > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: start;
+}
+
+.lead-card strong {
+  color: var(--black);
+}
+
+.lead-card small,
+.lead-card p {
+  color: var(--muted);
+}
+
+.lead-answers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lead-answers span {
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.assistant-followup-note {
+  border: 1px solid var(--assistant-accent, var(--black));
+  color: var(--black);
+  padding: 13px 15px;
+  font-weight: 800;
+}
+
 .assistant-page {
   background: #f7f7f5;
 }

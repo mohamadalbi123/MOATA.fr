@@ -56,9 +56,23 @@
               </span>
             </label>
             <label class="toggle-field"><input type="checkbox" name="phoneIsWhatsapp" value="Yes" /> <span>This number is also WhatsApp</span></label>
+            <label>Business email <input type="email" name="businessEmail" placeholder="hello@business.com" /></label>
+            <label>Lead notification email <input type="email" name="notificationEmail" placeholder="Where new diagnostic leads should be sent" /></label>
             <label>City <input name="city" placeholder="City" /></label>
             <label>Exact location or service area <input name="location" placeholder="Address, city area, or service radius" /></label>
             <label>Booking URL <input type="url" name="bookingUrl" placeholder="https://..." /></label>
+          </div>
+          <div class="setup-group">
+            <h3>After the recommendation, where should customers go?</h3>
+            <p class="field-help">Choose the main action customers should take after the assistant recommends the right service.</p>
+            <div class="option-grid">
+              <label class="option-card"><input type="radio" name="leadDestination" value="Booking link" required checked /><span>Booking link</span></label>
+              <label class="option-card"><input type="radio" name="leadDestination" value="WhatsApp booking" /><span>WhatsApp booking</span></label>
+              <label class="option-card"><input type="radio" name="leadDestination" value="Phone call" /><span>Book by phone</span></label>
+              <label class="option-card"><input type="radio" name="leadDestination" value="Directions" /><span>Get directions</span></label>
+              <label class="option-card"><input type="radio" name="leadDestination" value="Email follow-up" /><span>Email / follow-up</span></label>
+              <label class="option-card"><input type="radio" name="leadDestination" value="Business follow-up" /><span>Business contacts the lead</span></label>
+            </div>
           </div>
         </section>
 
@@ -426,8 +440,9 @@
           progress.forEach((item) => item.classList.toggle("active", item.textContent.trim() === title));
           if (back) back.disabled = index === 0;
           if (save) save.hidden = index === steps.length - 1;
-          next.hidden = index === steps.length - 1;
-          if (actions) actions.hidden = index !== steps.length - 1;
+          next.hidden = false;
+          next.textContent = index === steps.length - 1 ? "Save" : "Next";
+          if (actions) actions.hidden = true;
           if (note) {
             note.hidden = true;
             note.textContent = "";
@@ -486,6 +501,10 @@
           event.preventDefault();
           event.stopImmediatePropagation();
           if (!valid()) return;
+          if (index === steps.length - 1) {
+            form?.requestSubmit();
+            return;
+          }
           saveDraft("Draft saved. Moving to the next step.");
           index = Math.min(index + 1, steps.length - 1);
           window.moataWizardStep = index;

@@ -86,6 +86,10 @@ if (wizardSteps.length) {
   window.moataNextWizardStep = () => {
     currentWizardStep = window.moataWizardStep || currentWizardStep;
     if (!validateWizardStep(wizardSteps[currentWizardStep])) return;
+    if (currentWizardStep === wizardSteps.length - 1) {
+      requestForm?.requestSubmit();
+      return;
+    }
     setWizardMessage("");
     saveBuilderDraft("Draft saved. Moving to the next step.");
     currentWizardStep = Math.min(wizardSteps.length - 1, currentWizardStep + 1);
@@ -529,11 +533,13 @@ function createAssistantRecord(data) {
     business: {
       name: data.businessName || "My Business",
       website: data.currentWebsite || "",
+      email: data.businessEmail || "",
       phone,
       whatsapp: data.phoneIsWhatsapp === "Yes" ? phone : "",
       city: data.city || "",
       location: data.location || "",
-      bookingUrl: data.bookingUrl || ""
+      bookingUrl: data.bookingUrl || "",
+      notificationEmail: data.notificationEmail || data.businessEmail || ""
     },
     setup: {
       projectType: data.projectType || "AI Diagnostic Assistant",
@@ -543,6 +549,7 @@ function createAssistantRecord(data) {
       photoUpload: data.photoUpload || "",
       launchStyle: data.launchStyle || "",
       brandColor: getSelectedBrandColor(data),
+      leadDestination: data.leadDestination || "Booking link",
       assistantLanguage: data.assistantLanguage || "English",
       customerFreeText: data.customerFreeText || "",
       services: data.offers || "",
@@ -569,9 +576,8 @@ async function saveAssistant(assistant) {
       ? supabase.from("assistants").update(insertRow).eq("id", existingId)
       : supabase.from("assistants").insert(insertRow);
     let { data, error } = await query.select().single();
-    if (error && (error.message?.includes("brand_color") || error.message?.includes("assistant_language"))) {
-      delete insertRow.brand_color;
-      delete insertRow.assistant_language;
+    if (error && isOptionalAssistantColumnError(error)) {
+      removeOptionalAssistantColumns(insertRow);
       const retryQuery = existingId
         ? supabase.from("assistants").update(insertRow).eq("id", existingId)
         : supabase.from("assistants").insert(insertRow);
@@ -604,6 +610,17 @@ function saveAssistantLocal(assistant) {
   localStorage.setItem("moataEditAssistant", JSON.stringify(assistantToSave));
 }
 
+function isOptionalAssistantColumnError(error) {
+  const message = String(error?.message || "");
+  return ["brand_color", "assistant_language", "business_email", "notification_email", "lead_destination", "customer_free_text"].some((column) => message.includes(column));
+}
+
+function removeOptionalAssistantColumns(row) {
+  ["brand_color", "assistant_language", "business_email", "notification_email", "lead_destination", "customer_free_text"].forEach((column) => {
+    delete row[column];
+  });
+}
+
 async function getAssistants() {
   const supabase = await getSupabaseClient();
   const currentUser = await getCurrentUser();
@@ -616,6 +633,27 @@ async function getAssistants() {
     if (!error && data) return data.map(fromAssistantRow);
   }
   return getLocalAssistants();
+}
+
+async function getCustomerLeads(assistantId) {
+  const supabase = await getSupabaseClient();
+  if (!supabase || !assistantId) return [];
+  const { data, error } = await supabase
+    .from("customer_leads")
+    .select("*")
+    .eq("assistant_id", assistantId)
+    .order("created_at", { ascending: false })
+    .limit(12);
+  if (error || !data) return [];
+  return data.map((lead) => ({
+    id: lead.id,
+    createdAt: lead.created_at,
+    customerName: lead.customer_name || "",
+    customerEmail: lead.customer_email || "",
+    customerPhone: lead.customer_phone || "",
+    answers: lead.answers || {},
+    recommendation: lead.recommendation || ""
+  }));
 }
 
 function getLocalAssistants() {
@@ -631,11 +669,13 @@ function toAssistantRow(assistant, userId) {
     user_id: userId,
     business_name: assistant.business.name,
     business_website: assistant.business.website,
+    business_email: assistant.business.email,
     phone: assistant.business.phone,
     whatsapp: assistant.business.whatsapp,
     city: assistant.business.city,
     location: assistant.business.location,
     booking_url: assistant.business.bookingUrl,
+    notification_email: assistant.business.notificationEmail,
     industry: assistant.setup.industry,
     avatar: assistant.setup.assistantAppearance,
     question_cards: assistant.setup.questionCards,
@@ -643,6 +683,7 @@ function toAssistantRow(assistant, userId) {
     launch_style: assistant.setup.launchStyle,
     public_token: assistant.publicToken || createPublicToken(),
     brand_color: assistant.setup.brandColor,
+    lead_destination: assistant.setup.leadDestination,
     assistant_language: assistant.setup.assistantLanguage,
     customer_free_text: assistant.setup.customerFreeText,
     services: assistant.setup.services,
@@ -665,11 +706,13 @@ function fromAssistantRow(row) {
     business: {
       name: row.business_name || "My Business",
       website: row.business_website || "",
+      email: row.business_email || "",
       phone: row.phone || "",
       whatsapp: row.whatsapp || "",
       city: row.city || "",
       location: row.location || "",
-      bookingUrl: row.booking_url || ""
+      bookingUrl: row.booking_url || "",
+      notificationEmail: row.notification_email || row.business_email || ""
     },
     setup: {
       projectType: "AI Diagnostic Assistant",
@@ -679,6 +722,7 @@ function fromAssistantRow(row) {
       photoUpload: row.photo_upload || "",
       launchStyle: row.launch_style || "",
       brandColor: row.brand_color || "#050505",
+      leadDestination: row.lead_destination || "Booking link",
       assistantLanguage: row.assistant_language || "English",
       customerFreeText: row.customer_free_text || "",
       services: row.services || "",
@@ -740,6 +784,7 @@ async function renderDashboard() {
   const publicLink = new URL(`assistant.html?id=${encodeURIComponent(deliveryToken)}`, window.location.href).href;
   const embedCode = `<script src="https://www.moata.fr/widget.js" data-assistant="${deliveryToken}"></script>`;
   const view = new URLSearchParams(window.location.search).get("view") || "dashboard";
+  const leads = view === "assistant" ? await getCustomerLeads(assistant.id) : [];
   const sectionMap = {
     dashboard: renderDashboardHome,
     account: renderDashboardAccount,
@@ -747,7 +792,7 @@ async function renderDashboard() {
     billing: renderDashboardBilling
   };
   const activeSection = sectionMap[view] || renderDashboardHome;
-  const dashboardContext = { assistant, currentUser, userName, userEmail, publicLink, embedCode };
+  const dashboardContext = { assistant: { ...assistant, leads }, currentUser, userName, userEmail, publicLink, embedCode };
   localStorage.setItem("moataEditAssistant", JSON.stringify(assistant));
 
   dashboardRoot.innerHTML = `
@@ -848,6 +893,7 @@ function renderDashboardAccount({ currentUser, userName, userEmail }) {
 
 function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
   const canAccessDelivery = isAssistantActive(assistant);
+  const leads = assistant.leads || [];
   return `
     <section class="dashboard-single">
       <article class="dashboard-panel">
@@ -864,10 +910,13 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
           <div><dt>Brand color</dt><dd><span class="color-dot" style="--dot: ${sanitizeColor(assistant.setup.brandColor || "#050505")}"></span>${escapeHtml(assistant.setup.brandColor || "#050505")}</dd></div>
           <div><dt>Photo upload</dt><dd>${escapeHtml(assistant.setup.photoUpload || "-")}</dd></div>
           <div><dt>Launch style</dt><dd>${escapeHtml(assistant.setup.launchStyle || "-")}</dd></div>
+          <div><dt>After recommendation</dt><dd>${escapeHtml(assistant.setup.leadDestination || "Booking link")}</dd></div>
+          <div><dt>Lead notification</dt><dd>${escapeHtml(assistant.business.notificationEmail || "Dashboard only")}</dd></div>
           <div><dt>Questions</dt><dd>${escapeHtml(assistant.setup.questionCards || "-")}</dd></div>
           <div><dt>Services</dt><dd>${escapeHtml(assistant.setup.services || "-")}</dd></div>
           <div><dt>Rules to avoid</dt><dd>${escapeHtml(assistant.setup.rules || "-")}</dd></div>
         </dl>
+        ${renderLeadList(leads)}
         ${canAccessDelivery ? `
           <div class="dashboard-code-row">
             <div>
@@ -898,6 +947,54 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
       </article>
     </section>
   `;
+}
+
+function renderLeadList(leads = []) {
+  return `
+    <section class="dashboard-leads">
+      <div class="dashboard-code-row">
+        <div>
+          <strong>Diagnostic leads</strong>
+          <p>Customers who finish the diagnostic are saved here for follow-up.</p>
+        </div>
+        <span class="status-pill">${leads.length}</span>
+      </div>
+      ${leads.length ? `
+        <div class="lead-list">
+          ${leads.map(renderLeadCard).join("")}
+        </div>
+      ` : `<p class="form-note">No completed diagnostics yet. New leads will appear here after customers submit the assistant.</p>`}
+    </section>
+  `;
+}
+
+function renderLeadCard(lead) {
+  const contact = [lead.customerEmail, lead.customerPhone].filter(Boolean).join(" · ") || "No contact details selected";
+  const answers = Object.entries(lead.answers || {})
+    .filter(([, value]) => String(value || "").trim())
+    .slice(0, 6)
+    .map(([key, value]) => `<span><strong>${escapeHtml(key)}</strong> ${escapeHtml(value)}</span>`)
+    .join("");
+  return `
+    <article class="lead-card">
+      <div>
+        <strong>${escapeHtml(lead.customerName || "New diagnostic lead")}</strong>
+        <small>${escapeHtml(contact)}</small>
+      </div>
+      <p>${escapeHtml(formatLeadDate(lead.createdAt))}</p>
+      <p>${escapeHtml(lead.recommendation || "Recommendation saved.")}</p>
+      ${answers ? `<div class="lead-answers">${answers}</div>` : ""}
+    </article>
+  `;
+}
+
+function formatLeadDate(value = "") {
+  if (!value) return "Just now";
+  try {
+    return new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+  } catch {
+    return value;
+  }
 }
 
 function isAssistantActive(assistant) {
@@ -1016,7 +1113,7 @@ async function renderAssistantPreview() {
   const recommendation = services[0] || "The right service from this business";
   const avatar = getAvatarPath(data.setup.assistantAppearance);
   const brandColor = sanitizeColor(data.setup.brandColor || "#050505");
-  const whatsappLink = getWhatsAppLink(data.business.whatsapp, data.business.name);
+  const postDiagnosticActions = renderPostDiagnosticActions(data);
 
   assistantPreviewRoot.innerHTML = `
     <section class="assistant-shell" style="--assistant-accent: ${brandColor}">
@@ -1041,8 +1138,7 @@ async function renderAssistantPreview() {
         <h2 id="assistantRecommendationTitle">${escapeHtml(recommendation)}</h2>
         <p id="assistantRecommendationText">MOATA is preparing the recommendation using the business services and your answers.</p>
         <div class="compact-actions">
-          ${data.business.bookingUrl ? `<a class="button" href="${escapeHtml(data.business.bookingUrl)}">Continue to Booking</a>` : ""}
-          ${whatsappLink ? `<a class="button button-light" href="${escapeHtml(whatsappLink)}">Chat on WhatsApp</a>` : ""}
+          ${postDiagnosticActions}
         </div>
       </section>
       <button class="assistant-floating-avatar" id="assistantRestart" type="button" aria-label="Restart diagnostic">
@@ -1280,6 +1376,37 @@ function getWhatsAppLink(phone = "", businessName = "the business") {
   return `https://wa.me/${digits}?text=${message}`;
 }
 
+function renderPostDiagnosticActions(data) {
+  const destination = data.setup.leadDestination || "Booking link";
+  const business = data.business || {};
+  const whatsappLink = getWhatsAppLink(business.whatsapp || business.phone, business.name);
+  const directionLink = getDirectionsLink(business.location || business.city);
+  const emailLink = business.email ? `mailto:${business.email}?subject=${encodeURIComponent(`${business.name || "Business"} diagnostic result`)}` : "";
+  const phoneLink = business.phone ? `tel:${String(business.phone).replace(/\s/g, "")}` : "";
+  const actions = {
+    "Booking link": business.bookingUrl ? `<a class="button" href="${escapeHtml(business.bookingUrl)}">Continue to Booking</a>` : "",
+    "WhatsApp booking": whatsappLink ? `<a class="button" href="${escapeHtml(whatsappLink)}">Book on WhatsApp</a>` : "",
+    "Phone call": phoneLink ? `<a class="button" href="${escapeHtml(phoneLink)}">Call to Book</a>` : "",
+    Directions: directionLink ? `<a class="button" href="${escapeHtml(directionLink)}">Get Directions</a>` : "",
+    "Email follow-up": emailLink ? `<a class="button" href="${escapeHtml(emailLink)}">Email the Business</a>` : "",
+    "Business follow-up": `<span class="assistant-followup-note">Your answers have been sent to the business. Their team can follow up with you.</span>`
+  };
+  const primaryAction = actions[destination] || "";
+  const fallbackActions = [
+    !primaryAction && business.bookingUrl ? `<a class="button" href="${escapeHtml(business.bookingUrl)}">Continue to Booking</a>` : "",
+    destination !== "WhatsApp booking" && whatsappLink ? `<a class="button button-light" href="${escapeHtml(whatsappLink)}">Chat on WhatsApp</a>` : "",
+    destination !== "Phone call" && phoneLink ? `<a class="button button-light" href="${escapeHtml(phoneLink)}">Call</a>` : "",
+    destination !== "Directions" && directionLink ? `<a class="button button-light" href="${escapeHtml(directionLink)}">Directions</a>` : ""
+  ].filter(Boolean);
+  return [primaryAction || `<span class="assistant-followup-note">Please contact ${escapeHtml(business.name || "the business")} to confirm the right appointment.</span>`, ...fallbackActions].join("");
+}
+
+function getDirectionsLink(location = "") {
+  const cleanLocation = String(location || "").trim();
+  if (!cleanLocation) return "";
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cleanLocation)}`;
+}
+
 function getAvatarPath(appearance = "") {
   if (appearance.includes("Male") && appearance.includes("Casual")) return "assets/avatar-male-casual.png";
   if (appearance.includes("Male")) return "assets/avatar-male-white.png";
@@ -1441,11 +1568,14 @@ function getCachedEditAssistant(editId) {
 function fillBuilderForm(assistant) {
   setFieldValue("businessName", assistant.business.name);
   setFieldValue("currentWebsite", assistant.business.website);
+  setFieldValue("businessEmail", assistant.business.email);
   setPhoneField(assistant.business.phone);
   setCheckboxValue("phoneIsWhatsapp", Boolean(assistant.business.whatsapp && assistant.business.whatsapp === assistant.business.phone));
+  setFieldValue("notificationEmail", assistant.business.notificationEmail);
   setFieldValue("city", assistant.business.city);
   setFieldValue("location", assistant.business.location);
   setFieldValue("bookingUrl", assistant.business.bookingUrl);
+  setRadioValue("leadDestination", assistant.setup.leadDestination || "Booking link");
   const [baseIndustry, specialty] = splitStoredIndustry(assistant.setup.industry);
   setRadioValue("industry", baseIndustry);
   updateQuestionCards(baseIndustry);
@@ -1606,11 +1736,11 @@ function showWizardStep(index) {
   if (wizardBack) wizardBack.disabled = index === 0;
   if (wizardSave) wizardSave.hidden = index === wizardSteps.length - 1;
   if (wizardNext) {
-    wizardNext.hidden = index === wizardSteps.length - 1;
-    wizardNext.textContent = "Next";
+    wizardNext.hidden = false;
+    wizardNext.textContent = index === wizardSteps.length - 1 ? "Save" : "Next";
   }
   if (formActions) {
-    formActions.hidden = index !== wizardSteps.length - 1;
+    formActions.hidden = true;
   }
 }
 
