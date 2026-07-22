@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Lazoya diagnostic demo thumbnail</title>
+  <desc id="desc">A monochrome thumbnail showing a diagnostic walkthrough interface and a play button.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#050505"/>
+      <stop offset="0.58" stop-color="#171717"/>
+      <stop offset="1" stop-color="#f5f5f2"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="28" stdDeviation="32" flood-color="#000" flood-opacity=".32"/>
+    </filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect x="90" y="92" width="1420" height="716" rx="0" fill="#fff" filter="url(#shadow)"/>
+  <rect x="90" y="92" width="1420" height="74" fill="#050505"/>
+  <circle cx="135" cy="129" r="10" fill="#fff" opacity=".85"/>
+  <circle cx="170" cy="129" r="10" fill="#fff" opacity=".55"/>
+  <circle cx="205" cy="129" r="10" fill="#fff" opacity=".35"/>
+  <text x="114" y="246" fill="#050505" font-family="Inter, Arial, sans-serif" font-size="56" font-weight="800">Lazoya Diagnostic Demo</text>
+  <text x="116" y="306" fill="#646464" font-family="Inter, Arial, sans-serif" font-size="28">Website + AI guided service recommendation</text>
+  <rect x="116" y="382" width="430" height="76" rx="0" fill="#f5f5f2" stroke="#d9d9d9"/>
+  <circle cx="158" cy="420" r="14" fill="#050505"/>
+  <text x="188" y="430" fill="#050505" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Client answers a few questions</text>
+  <rect x="116" y="482" width="430" height="76" rx="0" fill="#fff" stroke="#d9d9d9"/>
+  <circle cx="158" cy="520" r="14" fill="#d9d9d9"/>
+  <text x="188" y="530" fill="#646464" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Uploads a photo if needed</text>
+  <rect x="116" y="582" width="430" height="76" rx="0" fill="#fff" stroke="#d9d9d9"/>
+  <circle cx="158" cy="620" r="14" fill="#d9d9d9"/>
+  <text x="188" y="630" fill="#646464" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Receives the right service</text>
+  <rect x="650" y="236" width="710" height="422" rx="0" fill="#050505"/>
+  <rect x="695" y="286" width="280" height="36" fill="#fff" opacity=".95"/>
+  <rect x="695" y="346" width="440" height="18" fill="#fff" opacity=".5"/>
+  <rect x="695" y="388" width="320" height="18" fill="#fff" opacity=".35"/>
+  <rect x="695" y="462" width="570" height="84" fill="#fff" opacity=".12" stroke="#fff" stroke-opacity=".35"/>
+  <text x="733" y="514" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="28" font-weight="800">Recommended Lazoya Service</text>
+  <rect x="695" y="576" width="260" height="48" fill="#fff"/>
+  <text x="730" y="608" fill="#050505" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="800">Continue to Book</text>
+  <circle cx="800" cy="450" r="84" fill="#fff"/>
+  <path d="M775 405v90l78-45-78-45Z" fill="#050505"/>
+  <text x="116" y="742" fill="#050505" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800">Watch how unsure clients become confident bookings</text>
+</svg>

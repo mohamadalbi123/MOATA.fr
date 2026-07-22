@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Build My Assistant | MOATA</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="intake-page">
+    <header class="site-header">
+      <a class="brand" href="index.html"><img class="brand-logo" src="assets/moata-logo.svg" alt="" /><span><strong>MOATA</strong><small>Management of Automated Tasks</small></span></a>
+      <nav class="main-nav"><a href="services.html">Platform</a><a href="index.html#pricing">Pricing</a><a href="lazoya-example.html">Use Case</a><a href="process.html">Process</a></nav>
+      <div class="header-actions"><a class="text-link" href="login.html">Login</a><a class="text-link" href="signup.html">Sign Up</a><a class="button button-light" href="request.html">Build My Assistant</a></div>
+    </header>
+
+    <main class="intake-main">
+      <section class="intake-intro">
+        <p class="eyebrow">Build my assistant</p>
+        <h1>Start your AI diagnostic assistant setup.</h1>
+        <p>
+          Choose the setup options that fit your business. MOATA will use this
+          information to prepare an assistant that asks the right questions and
+          guides customers to the right service or product.
+        </p>
+      </section>
+
+      <form class="intake-form" id="requestForm">
+        <div class="wizard-progress" aria-label="Assistant setup progress">
+          <span class="active">Business</span>
+          <span>Industry</span>
+          <span>Avatar</span>
+          <span>Questions</span>
+          <span>Setup</span>
+          <span>Services</span>
+        </div>
+
+        <section class="wizard-step active" data-step-title="Business">
+          <h2>Business Information</h2>
+          <div class="form-grid">
+            <label>Business name <input name="businessName" required /></label>
+            <label>Business website <input name="currentWebsite" placeholder="https://..." /></label>
+            <label>Phone number <input name="phone" /></label>
+            <label>WhatsApp <input name="whatsapp" placeholder="Optional" /></label>
+            <label>City <input name="city" placeholder="City" /></label>
+            <label>Exact location or service area <input name="location" placeholder="Address, city area, or service radius" /></label>
+            <label>Booking URL <input name="bookingUrl" placeholder="https://..." /></label>
+          </div>
+        </section>
+
+        <section class="wizard-step" data-step-title="Industry">
+          <h2>Choose Your Industry</h2>
+          <input type="hidden" name="projectType" value="AI Diagnostic Assistant" />
+          <div class="option-grid">
+            <label class="option-card"><input type="radio" name="industry" value="Beauty Salon / Skincare" required /><span>Beauty Salon / Skincare</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Hair Salon" /><span>Hair Salon</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Nail Salon" /><span>Nail Salon</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Dental Clinic" /><span>Dental Clinic</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Medical Clinic" /><span>Medical Clinic</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Physiotherapist" /><span>Physiotherapist</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Construction" /><span>Construction</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Electrician" /><span>Electrician</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Plumber" /><span>Plumber</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Cleaning Company" /><span>Cleaning Company</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Auto Repair" /><span>Auto Repair</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Veterinary" /><span>Veterinary</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Real Estate" /><span>Real Estate</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Lawyer" /><span>Lawyer</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Accountant" /><span>Accountant</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Personal Trainer" /><span>Personal Trainer</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Other" /><span>Other</span></label>
+          </div>
+          <div class="service-examples" id="serviceExamples" aria-live="polite">
+            <article data-industry="Beauty Salon / Skincare"><strong>Example recommendations</strong><span>Facial, Hydrating Facial, Chemical Peel, LED Therapy, Microneedling, Anti-Aging Treatment, Acne Treatment</span></article>
+            <article data-industry="Hair Salon"><strong>Example recommendations</strong><span>Haircut, Coloring, Balayage, Keratin, Hair Repair, Scalp Treatment</span></article>
+            <article data-industry="Nail Salon"><strong>Example recommendations</strong><span>Gel, Acrylic, BIAB, Manicure, Pedicure, Nail Repair</span></article>
+            <article data-industry="Dental Clinic"><strong>Example recommendations</strong><span>Emergency, Cleaning, Filling, Crown, Root Canal, Implant Consultation, Whitening</span></article>
+            <article data-industry="Medical Clinic"><strong>Example recommendations</strong><span>Appropriate doctor or appointment type only. Never diagnose disease.</span></article>
+            <article data-industry="Physiotherapist"><strong>Example recommendations</strong><span>Initial Assessment, Sports Rehab, Manual Therapy, Dry Needling, Massage</span></article>
+            <article data-industry="Construction"><strong>Example recommendations</strong><span>Renovation, Painting, Kitchen, Bathroom, Flooring, Roofing</span></article>
+            <article data-industry="Electrician"><strong>Example recommendations</strong><span>Electrical diagnostic, outlet repair, lighting installation, panel inspection, emergency electrical service, rewiring quote</span></article>
+            <article data-industry="Plumber"><strong>Example recommendations</strong><span>Leak repair, drain unclogging, water heater service, pipe repair, bathroom plumbing, emergency plumbing visit</span></article>
+            <article data-industry="Cleaning Company"><strong>Example recommendations</strong><span>Deep Cleaning, Standard Cleaning, Office Cleaning, Airbnb Cleaning</span></article>
+            <article data-industry="Auto Repair"><strong>Example recommendations</strong><span>Diagnostic, Brake Service, Oil Change, Engine Repair, Tire Service</span></article>
+            <article data-industry="Veterinary"><strong>Example recommendations</strong><span>General Consultation, Emergency, Vaccination, Surgery Consultation</span></article>
+            <article data-industry="Real Estate"><strong>Example recommendations</strong><span>Suitable properties, Agent appointment</span></article>
+            <article data-industry="Lawyer"><strong>Example recommendations</strong><span>Family Lawyer, Immigration, Criminal, Employment, Business Law</span></article>
+            <article data-industry="Accountant"><strong>Example recommendations</strong><span>Tax Return, Accounting, Payroll, Business Setup</span></article>
+            <article data-industry="Personal Trainer"><strong>Example recommendations</strong><span>Weight Loss, Muscle Gain, Strength, Online Coaching</span></article>
+          </div>
+        </section>
+
+        <section class="wizard-step" data-step-title="Avatar">
+          <h2>Choose The Assistant Avatar</h2>
+          <div class="avatar-grid">
+            <label class="avatar-card">
+              <input type="radio" name="assistantAppearance" value="Female White Outfit" required />
+              <img src="assets/avatar-female-white.png" alt="" />
+              <strong>Female</strong><small>White outfit</small>
+            </label>
+            <label class="avatar-card">
+              <input type="radio" name="assistantAppearance" value="Male White Outfit" />
+              <img src="assets/avatar-male-white.png" alt="" />
+              <strong>Male</strong><small>White outfit</small>
+            </label>
+            <label class="avatar-card">
+              <input type="radio" name="assistantAppearance" value="Female Casual Outfit" />
+              <img src="assets/avatar-female-casual.png" alt="" />
+              <strong>Female</strong><small>Casual outfit</small>
+            </label>
+            <label class="avatar-card">
+              <input type="radio" name="assistantAppearance" value="Male Casual Outfit" />
+              <img src="assets/avatar-male-casual.png" alt="" />
+              <strong>Male</strong><small>Casual outfit</small>
+            </label>
+          </div>
+        </section>
+
+        <section class="wizard-step" data-step-title="Questions">
+          <h2>What Do You Normally Ask Customers Before Offering The Service?</h2>
+          <p class="field-help">Universal questions are always available. Industry-specific cards appear after you choose an industry.</p>
+          <div class="option-grid question-grid" id="questionCards">
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Name" /><span>Name</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Email" /><span>Email</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Phone" /><span>Phone</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Age" /><span>Age</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Gender" /><span>Gender</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Height" /><span>Height</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Weight" /><span>Weight</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Address" /><span>Address</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Goal" /><span>Goal</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="What do you want to achieve?" /><span>What do you want to achieve?</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="What problem are you experiencing?" /><span>Problem experienced</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="How long has it existed?" /><span>How long?</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="How urgent is it?" /><span>Urgency</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Budget" /><span>Budget</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Preferred appointment date" /><span>Preferred date</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Preferred time" /><span>Preferred time</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Upload Photo" /><span>Upload photo</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Upload Video" /><span>Upload video</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Upload Document" /><span>Upload document</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Preferred contact method" /><span>Contact method</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Previous customer?" /><span>Previous customer?</span></label>
+            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Additional comments" /><span>Additional comments</span></label>
+
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Skin type" /><span>Skin type</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Biggest skin concern" /><span>Biggest skin concern</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Sensitive skin" /><span>Sensitive skin?</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Pregnant" /><span>Pregnant?</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Breastfeeding" /><span>Breastfeeding?</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Current skincare products" /><span>Current products</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Had this treatment before" /><span>Treatment before?</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Current medication" /><span>Current medication</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Botox or fillers recently" /><span>Botox/fillers recently?</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Sunscreen daily" /><span>Sunscreen daily?</span></label>
+
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Natural hair type" /><span>Natural hair type</span></label>
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Hair is dyed" /><span>Hair dyed?</span></label>
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Bleached hair" /><span>Bleached hair?</span></label>
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Wanted result" /><span>Wanted result</span></label>
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Damaged hair" /><span>Damaged hair?</span></label>
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Sensitive scalp" /><span>Sensitive scalp?</span></label>
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Color frequency" /><span>Color frequency</span></label>
+            <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Chemical treatments" /><span>Chemical treatments?</span></label>
+
+            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Nail service wanted" /><span>Service wanted</span></label>
+            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Natural nails or extensions" /><span>Natural / extensions</span></label>
+            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Bites nails" /><span>Bites nails?</span></label>
+            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Previous gel or acrylic" /><span>Previous gel/acrylic?</span></label>
+            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Nail condition" /><span>Nail condition</span></label>
+
+            <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="What is bothering you?" /><span>What is bothering you?</span></label>
+            <label class="option-card question-card" data-industries="Dental Clinic Physiotherapist Medical Clinic"><input type="checkbox" name="questionCards" value="Pain level" /><span>Pain level</span></label>
+            <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="Which tooth" /><span>Which tooth?</span></label>
+            <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="Swelling" /><span>Swelling?</span></label>
+            <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="Bleeding" /><span>Bleeding?</span></label>
+            <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="Broken tooth" /><span>Broken tooth?</span></label>
+            <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="Cold sensitivity" /><span>Cold sensitivity?</span></label>
+            <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="Hot sensitivity" /><span>Hot sensitivity?</span></label>
+
+            <label class="option-card question-card" data-industries="Medical Clinic"><input type="checkbox" name="questionCards" value="Main symptoms" /><span>Main symptoms</span></label>
+            <label class="option-card question-card" data-industries="Medical Clinic"><input type="checkbox" name="questionCards" value="When symptoms began" /><span>When began?</span></label>
+            <label class="option-card question-card" data-industries="Medical Clinic"><input type="checkbox" name="questionCards" value="Fever" /><span>Fever?</span></label>
+            <label class="option-card question-card" data-industries="Medical Clinic"><input type="checkbox" name="questionCards" value="Medical conditions" /><span>Medical conditions</span></label>
+
+            <label class="option-card question-card" data-industries="Physiotherapist"><input type="checkbox" name="questionCards" value="What hurts" /><span>What hurts?</span></label>
+            <label class="option-card question-card" data-industries="Physiotherapist"><input type="checkbox" name="questionCards" value="When did it start" /><span>When did it start?</span></label>
+            <label class="option-card question-card" data-industries="Physiotherapist"><input type="checkbox" name="questionCards" value="Injury" /><span>Injury?</span></label>
+            <label class="option-card question-card" data-industries="Physiotherapist"><input type="checkbox" name="questionCards" value="Surgery" /><span>Surgery?</span></label>
+            <label class="option-card question-card" data-industries="Physiotherapist"><input type="checkbox" name="questionCards" value="Move normally" /><span>Move normally?</span></label>
+            <label class="option-card question-card" data-industries="Physiotherapist"><input type="checkbox" name="questionCards" value="Sports activity" /><span>Sports activity?</span></label>
+
+            <label class="option-card question-card" data-industries="Construction"><input type="checkbox" name="questionCards" value="Project type" /><span>Project type</span></label>
+            <label class="option-card question-card" data-industries="Construction Real Estate"><input type="checkbox" name="questionCards" value="House or apartment" /><span>House / apartment</span></label>
+            <label class="option-card question-card" data-industries="Construction"><input type="checkbox" name="questionCards" value="Which room" /><span>Which room?</span></label>
+            <label class="option-card question-card" data-industries="Construction"><input type="checkbox" name="questionCards" value="Estimated area" /><span>Estimated area</span></label>
+            <label class="option-card question-card" data-industries="Construction"><input type="checkbox" name="questionCards" value="Desired completion date" /><span>Completion date</span></label>
+
+            <label class="option-card question-card" data-industries="Electrician"><input type="checkbox" name="questionCards" value="Electrical issue type" /><span>Issue type</span></label>
+            <label class="option-card question-card" data-industries="Electrician"><input type="checkbox" name="questionCards" value="Power outage" /><span>Power outage?</span></label>
+            <label class="option-card question-card" data-industries="Electrician"><input type="checkbox" name="questionCards" value="Burning smell or sparks" /><span>Smell / sparks?</span></label>
+            <label class="option-card question-card" data-industries="Electrician"><input type="checkbox" name="questionCards" value="Breaker tripping" /><span>Breaker tripping?</span></label>
+            <label class="option-card question-card" data-industries="Electrician"><input type="checkbox" name="questionCards" value="Outlet or switch affected" /><span>Outlet / switch?</span></label>
+            <label class="option-card question-card" data-industries="Electrician"><input type="checkbox" name="questionCards" value="Lighting issue" /><span>Lighting issue?</span></label>
+            <label class="option-card question-card" data-industries="Electrician"><input type="checkbox" name="questionCards" value="Emergency electrical risk" /><span>Emergency risk?</span></label>
+
+            <label class="option-card question-card" data-industries="Plumber"><input type="checkbox" name="questionCards" value="Plumbing issue type" /><span>Issue type</span></label>
+            <label class="option-card question-card" data-industries="Plumber"><input type="checkbox" name="questionCards" value="Leak location" /><span>Leak location</span></label>
+            <label class="option-card question-card" data-industries="Plumber"><input type="checkbox" name="questionCards" value="Water still flowing" /><span>Water flowing?</span></label>
+            <label class="option-card question-card" data-industries="Plumber"><input type="checkbox" name="questionCards" value="Blocked drain or toilet" /><span>Blocked drain?</span></label>
+            <label class="option-card question-card" data-industries="Plumber"><input type="checkbox" name="questionCards" value="Water heater issue" /><span>Water heater?</span></label>
+            <label class="option-card question-card" data-industries="Plumber"><input type="checkbox" name="questionCards" value="Water damage visible" /><span>Water damage?</span></label>
+            <label class="option-card question-card" data-industries="Plumber"><input type="checkbox" name="questionCards" value="Emergency plumbing risk" /><span>Emergency risk?</span></label>
+
+            <label class="option-card question-card" data-industries="Cleaning Company"><input type="checkbox" name="questionCards" value="Property type" /><span>Property type</span></label>
+            <label class="option-card question-card" data-industries="Cleaning Company"><input type="checkbox" name="questionCards" value="Number of rooms" /><span>Number of rooms</span></label>
+            <label class="option-card question-card" data-industries="Cleaning Company"><input type="checkbox" name="questionCards" value="Deep clean" /><span>Deep clean?</span></label>
+            <label class="option-card question-card" data-industries="Cleaning Company"><input type="checkbox" name="questionCards" value="Regular cleaning" /><span>Regular cleaning?</span></label>
+            <label class="option-card question-card" data-industries="Cleaning Company Veterinary"><input type="checkbox" name="questionCards" value="Pets" /><span>Pets?</span></label>
+            <label class="option-card question-card" data-industries="Cleaning Company"><input type="checkbox" name="questionCards" value="Move in or out" /><span>Move in/out?</span></label>
+
+            <label class="option-card question-card" data-industries="Auto Repair"><input type="checkbox" name="questionCards" value="Vehicle brand" /><span>Vehicle brand</span></label>
+            <label class="option-card question-card" data-industries="Auto Repair"><input type="checkbox" name="questionCards" value="Model" /><span>Model</span></label>
+            <label class="option-card question-card" data-industries="Auto Repair"><input type="checkbox" name="questionCards" value="Year" /><span>Year</span></label>
+            <label class="option-card question-card" data-industries="Auto Repair"><input type="checkbox" name="questionCards" value="Mileage" /><span>Mileage</span></label>
+            <label class="option-card question-card" data-industries="Auto Repair"><input type="checkbox" name="questionCards" value="Warning lights" /><span>Warning lights?</span></label>
+            <label class="option-card question-card" data-industries="Auto Repair"><input type="checkbox" name="questionCards" value="Strange noise" /><span>Strange noise?</span></label>
+            <label class="option-card question-card" data-industries="Auto Repair"><input type="checkbox" name="questionCards" value="Accident" /><span>Accident?</span></label>
+
+            <label class="option-card question-card" data-industries="Veterinary"><input type="checkbox" name="questionCards" value="Animal type" /><span>Animal type</span></label>
+            <label class="option-card question-card" data-industries="Veterinary"><input type="checkbox" name="questionCards" value="Breed" /><span>Breed</span></label>
+            <label class="option-card question-card" data-industries="Veterinary"><input type="checkbox" name="questionCards" value="Animal age" /><span>Animal age</span></label>
+            <label class="option-card question-card" data-industries="Veterinary"><input type="checkbox" name="questionCards" value="Eating normally" /><span>Eating normally?</span></label>
+            <label class="option-card question-card" data-industries="Veterinary"><input type="checkbox" name="questionCards" value="Drinking normally" /><span>Drinking?</span></label>
+            <label class="option-card question-card" data-industries="Veterinary"><input type="checkbox" name="questionCards" value="Vaccinated" /><span>Vaccinated?</span></label>
+
+            <label class="option-card question-card" data-industries="Real Estate"><input type="checkbox" name="questionCards" value="Buy or sell" /><span>Buy or sell?</span></label>
+            <label class="option-card question-card" data-industries="Real Estate"><input type="checkbox" name="questionCards" value="Preferred city" /><span>Preferred city</span></label>
+            <label class="option-card question-card" data-industries="Real Estate"><input type="checkbox" name="questionCards" value="Bedrooms" /><span>Bedrooms</span></label>
+            <label class="option-card question-card" data-industries="Real Estate"><input type="checkbox" name="questionCards" value="Financing approved" /><span>Financing approved?</span></label>
+            <label class="option-card question-card" data-industries="Real Estate"><input type="checkbox" name="questionCards" value="Timeline" /><span>Timeline</span></label>
+
+            <label class="option-card question-card" data-industries="Lawyer"><input type="checkbox" name="questionCards" value="Legal issue" /><span>Legal issue</span></label>
+            <label class="option-card question-card" data-industries="Lawyer"><input type="checkbox" name="questionCards" value="When did it happen" /><span>When happened?</span></label>
+            <label class="option-card question-card" data-industries="Lawyer"><input type="checkbox" name="questionCards" value="Documents available" /><span>Documents?</span></label>
+            <label class="option-card question-card" data-industries="Lawyer"><input type="checkbox" name="questionCards" value="Deadline" /><span>Deadline?</span></label>
+
+            <label class="option-card question-card" data-industries="Accountant"><input type="checkbox" name="questionCards" value="Individual or business" /><span>Individual/business</span></label>
+            <label class="option-card question-card" data-industries="Accountant"><input type="checkbox" name="questionCards" value="Company type" /><span>Company type</span></label>
+            <label class="option-card question-card" data-industries="Accountant"><input type="checkbox" name="questionCards" value="Annual revenue" /><span>Annual revenue</span></label>
+            <label class="option-card question-card" data-industries="Accountant"><input type="checkbox" name="questionCards" value="VAT registered" /><span>VAT registered?</span></label>
+            <label class="option-card question-card" data-industries="Accountant"><input type="checkbox" name="questionCards" value="Employees" /><span>Employees?</span></label>
+            <label class="option-card question-card" data-industries="Accountant"><input type="checkbox" name="questionCards" value="Bookkeeping or tax" /><span>Bookkeeping / tax</span></label>
+
+            <label class="option-card question-card" data-industries="Personal Trainer"><input type="checkbox" name="questionCards" value="Fitness goal" /><span>Fitness goal</span></label>
+            <label class="option-card question-card" data-industries="Personal Trainer"><input type="checkbox" name="questionCards" value="Injuries" /><span>Injuries?</span></label>
+            <label class="option-card question-card" data-industries="Personal Trainer"><input type="checkbox" name="questionCards" value="Gym experience" /><span>Gym experience</span></label>
+            <label class="option-card question-card" data-industries="Personal Trainer"><input type="checkbox" name="questionCards" value="Days available" /><span>Days available</span></label>
+          </div>
+        </section>
+
+        <section class="wizard-step setup-step" data-step-title="Setup">
+          <h2>Assistant Setup</h2>
+          <div class="setup-group">
+            <h3>Does the customer need to upload a photo?</h3>
+            <div class="option-grid">
+              <label class="option-card"><input type="radio" name="photoUpload" value="Yes" required /><span>Yes, customers should upload photos</span></label>
+              <label class="option-card"><input type="radio" name="photoUpload" value="No" /><span>No photo upload needed</span></label>
+              <label class="option-card"><input type="radio" name="photoUpload" value="Not sure yet" /><span>Not sure yet</span></label>
+            </div>
+          </div>
+          <div class="setup-group">
+            <h3>How should the diagnostic appear?</h3>
+            <div class="option-grid">
+              <label class="option-card"><input type="radio" name="launchStyle" value="Floating assistant button" required /><span>Floating assistant button</span></label>
+              <label class="option-card"><input type="radio" name="launchStyle" value="Popup diagnostic window" /><span>Popup diagnostic window</span></label>
+              <label class="option-card"><input type="radio" name="launchStyle" value="Embedded diagnostic section" /><span>Embedded section</span></label>
+              <label class="option-card"><input type="radio" name="launchStyle" value="Standalone diagnostic link" /><span>Standalone link</span></label>
+            </div>
+          </div>
+          <div class="setup-group">
+            <h3>Should customers write in their own words?</h3>
+            <p class="field-help">This gives customers space to describe their challenge or need before the assistant recommends a service.</p>
+            <div class="option-grid">
+              <label class="option-card"><input type="radio" name="customerFreeText" value="Yes" required /><span>Yes, add a writing space</span></label>
+              <label class="option-card"><input type="radio" name="customerFreeText" value="No" /><span>No, only use selected answers</span></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="wizard-step" data-step-title="Services">
+          <h2>Services</h2>
+          <label>Paste your service or product list <textarea name="offers" placeholder="Service name, description, price, duration, booking link if different..."></textarea></label>
+          <label>Anything the assistant must avoid? <textarea name="rules" placeholder="Examples: avoid medical advice, avoid promising results, avoid recommending unavailable services, avoid discussing prices if they change, ask the customer to contact us if unsure..."></textarea></label>
+        </section>
+
+        <div class="wizard-controls">
+          <button class="button button-light" type="button" id="wizardBack">Back</button>
+          <button class="button" type="button" id="wizardNext">Next</button>
+        </div>
+
+        <div class="form-actions">
+          <button class="button" type="submit">Save Assistant</button>
+          <button class="button button-light" type="button" disabled>Continue to Checkout</button>
+        </div>
+        <p class="form-note">You can build the setup first. To save the assistant, open the dashboard, and continue to checkout, you will create a MOATA account at the final step.</p>
+        <p class="form-note" id="requestNote" aria-live="polite"></p>
+      </form>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

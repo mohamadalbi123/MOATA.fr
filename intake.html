@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MOATA Assistant Intake</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="intake-page">
+    <header class="site-header">
+      <a class="brand" href="index.html" aria-label="MOATA home">
+        <img class="brand-logo" src="assets/moata-logo.svg" alt="" />
+        <span>
+          <strong>MOATA</strong>
+          <small>Assistant Intake</small>
+        </span>
+      </a>
+      <a class="button button-light" href="index.html">Back to Website</a>
+    </header>
+
+    <main class="intake-main">
+      <section class="intake-intro">
+        <p class="eyebrow">Next step after agreement</p>
+        <h1>Assistant Onboarding Form</h1>
+        <p>
+          This page collects the information needed to configure your AI
+          diagnostic assistant. Complete the form, download the brief, and send it
+          back with your logo, photos, documents, and any existing links.
+        </p>
+      </section>
+
+      <form class="intake-form" id="intakeForm">
+        <section>
+          <h2>Business Details</h2>
+          <div class="form-grid">
+            <label>Business name <input name="businessName" required /></label>
+            <label>Business type <input name="businessType" placeholder="Pest control, salon, clinic..." /></label>
+            <label>Contact name <input name="contactName" /></label>
+            <label>Email <input type="email" name="email" /></label>
+            <label>Phone <input name="phone" /></label>
+            <label>WhatsApp <input name="whatsapp" /></label>
+            <label>Website <input name="website" /></label>
+            <label>Booking link <input name="bookingLink" /></label>
+          </div>
+          <label>Business description <textarea name="description"></textarea></label>
+          <label>Address and service area <textarea name="address"></textarea></label>
+          <label>Opening hours <textarea name="openingHours"></textarea></label>
+        </section>
+
+        <section>
+          <h2>Assistant Setup</h2>
+          <input type="hidden" name="packageType" value="AI Diagnostic Assistant" />
+          <label>Assistant name, appearance, and brand notes <textarea name="assistantBrand" placeholder="Assistant name, professional or casual style, logo, colors..."></textarea></label>
+          <label>Main goal for this assistant <textarea name="projectGoal" placeholder="More bookings, fewer repeated questions, better service selection, better prepared appointments..."></textarea></label>
+          <label>Current booking process <textarea name="currentBookingProcess" placeholder="Planity, phone, WhatsApp, custom form, email, booking link..."></textarea></label>
+        </section>
+
+        <section>
+          <h2>Services and Prices</h2>
+          <label>List all services, prices, duration, and what each service is for <textarea name="services" required></textarea></label>
+          <label>Which services do customers usually get confused about? <textarea name="confusingServices"></textarea></label>
+          <label>Services the AI should never recommend unless specific conditions are met <textarea name="serviceRules"></textarea></label>
+        </section>
+
+        <section>
+          <h2>Diagnostic Questions</h2>
+          <label>What questions do you usually ask before recommending a service? <textarea name="diagnosticQuestions"></textarea></label>
+          <label>Should customers upload photos? If yes, what photos do you need? <textarea name="photoRequirements"></textarea></label>
+          <label>What should happen after the AI recommends a service? <textarea name="afterRecommendation" placeholder="Book appointment, call, WhatsApp, quote request..."></textarea></label>
+        </section>
+
+        <section>
+          <h2>Knowledge Base</h2>
+          <label>FAQs and answers <textarea name="faqs"></textarea></label>
+          <label>Policies, guarantees, cancellation rules, preparation instructions <textarea name="policies"></textarea></label>
+          <label>Staff, certifications, experience, special notes <textarea name="staff"></textarea></label>
+          <label>Social links <textarea name="socialLinks"></textarea></label>
+        </section>
+
+        <section>
+          <h2>Installation</h2>
+          <label>Where should the assistant appear? <textarea name="installation" placeholder="Existing website, popup, floating button, inline widget, standalone page..."></textarea></label>
+          <label>Website platform <textarea name="websitePlatform" placeholder="WordPress, Wix, Shopify, Squarespace, custom website, not sure..."></textarea></label>
+          <label>Images, logo, and documents to send separately <textarea name="assets"></textarea></label>
+        </section>
+
+        <div class="form-actions">
+          <button class="button" type="submit">Download Assistant Brief</button>
+          <button class="button button-light" type="reset">Clear Form</button>
+        </div>
+        <p class="form-note" id="formNote" aria-live="polite"></p>
+      </form>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

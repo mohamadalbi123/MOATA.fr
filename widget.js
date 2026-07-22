@@ -1,0 +1,20 @@
+(function () {
+  const script = document.currentScript;
+  const assistantId = script?.dataset.assistant || "demo";
+  const baseUrl = script?.dataset.baseUrl || "https://moata.com";
+  const link = `${baseUrl}/assistant.html?id=${encodeURIComponent(assistantId)}`;
+  const button = document.createElement("a");
+  button.href = link;
+  button.textContent = "Start Diagnostic";
+  button.style.position = "fixed";
+  button.style.right = "18px";
+  button.style.bottom = "18px";
+  button.style.zIndex = "9999";
+  button.style.padding = "14px 18px";
+  button.style.background = "#050505";
+  button.style.color = "#fff";
+  button.style.font = "700 14px system-ui, sans-serif";
+  button.style.textDecoration = "none";
+  button.style.border = "1px solid #050505";
+  document.body.appendChild(button);
+})();
