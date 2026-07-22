@@ -1238,6 +1238,47 @@ p {
   font-size: 18px;
 }
 
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.color-card {
+  min-height: 108px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  background: var(--white);
+  cursor: pointer;
+  text-align: center;
+}
+
+.color-card input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.color-card span {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--black);
+  background: var(--swatch);
+}
+
+.color-card:has(input:checked) {
+  border-color: var(--black);
+  box-shadow: inset 0 0 0 2px var(--black);
+}
+
+.color-card strong {
+  font-size: 13px;
+}
+
 .wizard-controls {
   display: flex;
   justify-content: space-between;
@@ -1491,6 +1532,16 @@ textarea {
   margin: 4px 0 0;
 }
 
+.color-dot {
+  width: 13px;
+  height: 13px;
+  display: inline-block;
+  margin-right: 8px;
+  border: 1px solid var(--black);
+  background: var(--dot);
+  vertical-align: -1px;
+}
+
 .assistant-page {
   background: var(--soft);
 }
@@ -1517,6 +1568,7 @@ textarea {
 .assistant-panel {
   position: sticky;
   top: 22px;
+  border-top: 8px solid var(--assistant-accent, var(--black));
 }
 
 .assistant-panel h1 {
@@ -1530,7 +1582,13 @@ textarea {
   object-fit: cover;
   object-position: center top;
   border: 1px solid var(--line);
+  border-bottom: 8px solid var(--assistant-accent, var(--black));
   margin-bottom: 20px;
+}
+
+.assistant-shell .button {
+  background: var(--assistant-accent, var(--black));
+  border-color: var(--assistant-accent, var(--black));
 }
 
 .assistant-result {
@@ -1607,7 +1665,8 @@ textarea {
   }
 
   .option-grid,
-  .avatar-grid {
+  .avatar-grid,
+  .color-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 

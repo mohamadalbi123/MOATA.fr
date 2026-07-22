@@ -267,6 +267,7 @@ function createAssistantRecord(data) {
       questionCards: data.questionCards || "",
       photoUpload: data.photoUpload || "",
       launchStyle: data.launchStyle || "",
+      brandColor: data.brandColor || "#050505",
       customerFreeText: data.customerFreeText || "",
       services: data.offers || "",
       rules: data.rules || ""
@@ -278,11 +279,22 @@ async function saveAssistant(assistant) {
   const supabase = await getSupabaseClient();
   const currentUser = await getCurrentUser();
   if (supabase && currentUser) {
-    const { data, error } = await supabase
+    let insertRow = toAssistantRow(assistant, currentUser.id);
+    let { data, error } = await supabase
       .from("assistants")
-      .insert(toAssistantRow(assistant, currentUser.id))
+      .insert(insertRow)
       .select()
       .single();
+    if (error && error.message?.includes("brand_color")) {
+      delete insertRow.brand_color;
+      const retry = await supabase
+        .from("assistants")
+        .insert(insertRow)
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
     if (error) throw error;
     const savedAssistant = fromAssistantRow(data);
     saveAssistantLocal(savedAssistant);
@@ -334,6 +346,7 @@ function toAssistantRow(assistant, userId) {
     question_cards: assistant.setup.questionCards,
     photo_upload: assistant.setup.photoUpload,
     launch_style: assistant.setup.launchStyle,
+    brand_color: assistant.setup.brandColor,
     customer_free_text: assistant.setup.customerFreeText,
     services: assistant.setup.services,
     rules: assistant.setup.rules,
@@ -362,6 +375,7 @@ function fromAssistantRow(row) {
       questionCards: row.question_cards || "",
       photoUpload: row.photo_upload || "",
       launchStyle: row.launch_style || "",
+      brandColor: row.brand_color || "#050505",
       customerFreeText: row.customer_free_text || "",
       services: row.services || "",
       rules: row.rules || ""
@@ -393,6 +407,7 @@ async function getPublicAssistant(id) {
 
 async function renderDashboard() {
   const assistant = await getSelectedAssistant();
+  const currentUser = await getCurrentUser();
   if (!assistant) {
     dashboardRoot.innerHTML = `
       <section class="dashboard-empty">
@@ -434,18 +449,22 @@ async function renderDashboard() {
         <h2>Assistant setup</h2>
         <dl>
           <div><dt>Avatar</dt><dd>${escapeHtml(assistant.setup.assistantAppearance)}</dd></div>
+          <div><dt>Brand color</dt><dd><span class="color-dot" style="--dot: ${sanitizeColor(assistant.setup.brandColor || "#050505")}"></span>${escapeHtml(assistant.setup.brandColor || "#050505")}</dd></div>
           <div><dt>Photo upload</dt><dd>${escapeHtml(assistant.setup.photoUpload || "-")}</dd></div>
           <div><dt>Launch style</dt><dd>${escapeHtml(assistant.setup.launchStyle || "-")}</dd></div>
           <div><dt>Questions</dt><dd>${escapeHtml(assistant.setup.questionCards || "-")}</dd></div>
         </dl>
       </article>
       <article class="dashboard-panel">
-        <h2>Next production step</h2>
-        <p>In the real SaaS version this area will show checkout, billing status, customer leads, and the live AI assistant status.</p>
+        <h2>Activate subscription</h2>
+        <p>Start the €39/month MOATA plan to use the live assistant, hosted diagnostic page, website embed code, and future updates.</p>
+        <button class="button" id="checkoutButton" type="button">Continue to Checkout</button>
+        <p class="form-note" id="checkoutNote" aria-live="polite"></p>
       </article>
     </section>
   `;
   bindCopyButtons();
+  bindCheckoutButton(currentUser);
 }
 
 async function renderAssistantPreview() {
@@ -457,6 +476,7 @@ async function renderAssistantPreview() {
       industry: "Service Business",
       assistantAppearance: "Female White Outfit",
       questionCards: "Main concern, Budget, Upload Photo",
+      brandColor: "#050505",
       services: "Initial Consultation\nRecommended Service\nFollow-up Appointment",
       rules: "If unsure, ask the customer to contact the business."
     }
@@ -473,34 +493,57 @@ async function renderAssistantPreview() {
     .filter(Boolean);
   const recommendation = services[0] || "The right service from this business";
   const avatar = getAvatarPath(data.setup.assistantAppearance);
+  const brandColor = sanitizeColor(data.setup.brandColor || "#050505");
 
   assistantPreviewRoot.innerHTML = `
-    <section class="assistant-shell">
+    <section class="assistant-shell" style="--assistant-accent: ${brandColor}">
       <div class="assistant-panel">
         <img class="assistant-photo" src="${avatar}" alt="" />
         <p class="eyebrow">${escapeHtml(data.setup.industry)}</p>
         <h1>${escapeHtml(data.business.name)} Assistant</h1>
         <p>Answer a few questions so the business can understand your need before booking.</p>
       </div>
-      <form class="assistant-diagnostic">
+      <form class="assistant-diagnostic" id="assistantDiagnosticForm">
         ${questions.map((question, index) => `
           <label>${escapeHtml(question)}
-            <input ${index === 0 ? "required" : ""} placeholder="Your answer" />
+            <input name="${escapeHtml(question)}" ${index === 0 ? "required" : ""} placeholder="Your answer" />
           </label>
         `).join("")}
-        <button class="button" type="button" id="assistantRecommend">Show Recommendation</button>
+        ${data.setup.customerFreeText === "Yes" ? `<label>Tell us more<textarea name="Additional comments" placeholder="Describe your need in your own words"></textarea></label>` : ""}
+        <button class="button" type="submit" id="assistantRecommend">Show Recommendation</button>
       </form>
       <section class="assistant-result" id="assistantResult" hidden>
-        <p class="eyebrow">Preview recommendation</p>
-        <h2>${escapeHtml(recommendation)}</h2>
-        <p>This prototype recommendation is based on the first service in the submitted setup. In production, OpenAI will match the customer answers against all business services and rules.</p>
+        <p class="eyebrow">Recommendation</p>
+        <h2 id="assistantRecommendationTitle">${escapeHtml(recommendation)}</h2>
+        <p id="assistantRecommendationText">MOATA is preparing the recommendation using the business services and your answers.</p>
         ${data.business.bookingUrl ? `<a class="button" href="${escapeHtml(data.business.bookingUrl)}">Continue to Booking</a>` : ""}
       </section>
     </section>
   `;
-  document.getElementById("assistantRecommend")?.addEventListener("click", () => {
-    document.getElementById("assistantResult").hidden = false;
+  document.getElementById("assistantDiagnosticForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const result = document.getElementById("assistantResult");
+    const text = document.getElementById("assistantRecommendationText");
+    result.hidden = false;
+    text.textContent = "Creating recommendation...";
+    const answers = collectFormData(event.currentTarget);
+    try {
+      const response = await fetch("/api/recommend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assistantId: data.id, answers })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || payload.error || "Recommendation failed");
+      text.textContent = payload.recommendation;
+    } catch (error) {
+      text.textContent = "We could not create an AI recommendation right now. Please contact the business or try again.";
+    }
   });
+}
+
+function sanitizeColor(color = "#050505") {
+  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#050505";
 }
 
 function getAvatarPath(appearance = "") {
@@ -516,6 +559,25 @@ function bindCopyButtons() {
       await navigator.clipboard.writeText(button.dataset.copy || "");
       button.textContent = "Copied";
     });
+  });
+}
+
+function bindCheckoutButton(currentUser) {
+  document.getElementById("checkoutButton")?.addEventListener("click", async () => {
+    const note = document.getElementById("checkoutNote");
+    note.textContent = "Opening secure checkout...";
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: currentUser?.email || "" })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Checkout failed");
+      window.location.href = payload.url;
+    } catch (error) {
+      note.textContent = "Checkout is not ready yet. Check Stripe keys and price ID in Vercel.";
+    }
   });
 }
 
