@@ -220,7 +220,7 @@ async function signInWithGoogle() {
   if (!supabase) {
     return {
       ok: false,
-      message: "Google login is available on the live MOATA site after Supabase is connected."
+      message: "Google login is available on the live MOATA site."
     };
   }
 
@@ -654,19 +654,25 @@ function renderDashboardCard(label, title, description, href) {
 
 function renderDashboardAccount({ currentUser, userName, userEmail }) {
   const provider = currentUser?.app_metadata?.provider || "email";
+  const loginMethod = provider === "google" ? "Google" : "Email and password";
   return `
-    <section class="dashboard-single">
-      <article class="dashboard-panel">
-        <p class="eyebrow">Account Settings</p>
+    <section class="account-settings-grid">
+      <article class="dashboard-panel account-profile-card">
+        <p class="eyebrow">Profile</p>
+        <div class="account-avatar">${escapeHtml((userName || userEmail || "M").slice(0, 1).toUpperCase())}</div>
         <h2>${escapeHtml(userName || "MOATA Client")}</h2>
+        <p>${escapeHtml(userEmail)}</p>
+      </article>
+      <article class="dashboard-panel account-security-card">
+        <p class="eyebrow">Sign-in</p>
+        <h2>Login details</h2>
         <dl class="dashboard-details">
-          <div><dt>Name</dt><dd>${escapeHtml(userName || "Not provided")}</dd></div>
-          <div><dt>Email</dt><dd>${escapeHtml(userEmail)}</dd></div>
-          <div><dt>Login method</dt><dd>${escapeHtml(provider)}</dd></div>
-          <div><dt>Password</dt><dd>Managed securely by Supabase authentication. Use password reset if you want to change it.</dd></div>
+          <div><dt>Account email</dt><dd>${escapeHtml(userEmail)}</dd></div>
+          <div><dt>Login method</dt><dd>${escapeHtml(loginMethod)}</dd></div>
+          <div><dt>Password</dt><dd>Send a reset link to your email if you want to change your password.</dd></div>
         </dl>
         <div class="compact-actions">
-          <button class="button" id="passwordResetButton" type="button">Send Password Reset</button>
+          <button class="button" id="passwordResetButton" type="button">Send Reset Link</button>
           <a class="button button-light" href="${getDashboardUrl("dashboard")}">Back to Dashboard</a>
         </div>
         <p class="form-note" id="accountNote" aria-live="polite"></p>
@@ -1146,7 +1152,7 @@ function bindAccountActions(currentUser) {
     }
     const supabase = await getSupabaseClient();
     if (!supabase) {
-      note.textContent = "Password reset is available on the live MOATA site after Supabase is connected.";
+      note.textContent = "Password reset is available on the live MOATA site.";
       return;
     }
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
