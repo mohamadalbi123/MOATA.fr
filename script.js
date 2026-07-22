@@ -562,7 +562,6 @@ async function renderDashboard() {
 
 function renderDashboardNav(activeView, assistantId) {
   const navItems = [
-    ["dashboard", "Dashboard"],
     ["assistant", "My Assistant"],
     ["billing", "Billing"],
     ["account", "Account Settings"]
