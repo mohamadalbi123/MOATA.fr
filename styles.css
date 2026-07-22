@@ -1444,6 +1444,17 @@ textarea {
   padding: 10px 12px;
 }
 
+.phone-field {
+  display: grid;
+  grid-template-columns: minmax(118px, 0.35fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.phone-field select,
+.phone-field input {
+  margin: 0;
+}
+
 textarea {
   min-height: 130px;
   resize: vertical;

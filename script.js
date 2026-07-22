@@ -291,8 +291,8 @@ function createAssistantRecord(data) {
     business: {
       name: data.businessName || "My Business",
       website: data.currentWebsite || "",
-      phone: data.phone || "",
-      whatsapp: data.whatsapp || "",
+      phone: formatPhoneNumber(data.phoneCountryCode, data.phone),
+      whatsapp: formatPhoneNumber(data.whatsappCountryCode, data.whatsapp),
       city: data.city || "",
       location: data.location || "",
       bookingUrl: data.bookingUrl || ""
@@ -305,6 +305,7 @@ function createAssistantRecord(data) {
       photoUpload: data.photoUpload || "",
       launchStyle: data.launchStyle || "",
       brandColor: data.brandColor || "#050505",
+      assistantLanguage: data.assistantLanguage || "English",
       customerFreeText: data.customerFreeText || "",
       services: data.offers || "",
       rules: data.rules || ""
@@ -322,8 +323,9 @@ async function saveAssistant(assistant) {
       .insert(insertRow)
       .select()
       .single();
-    if (error && error.message?.includes("brand_color")) {
+    if (error && (error.message?.includes("brand_color") || error.message?.includes("assistant_language"))) {
       delete insertRow.brand_color;
+      delete insertRow.assistant_language;
       const retry = await supabase
         .from("assistants")
         .insert(insertRow)
@@ -384,6 +386,7 @@ function toAssistantRow(assistant, userId) {
     photo_upload: assistant.setup.photoUpload,
     launch_style: assistant.setup.launchStyle,
     brand_color: assistant.setup.brandColor,
+    assistant_language: assistant.setup.assistantLanguage,
     customer_free_text: assistant.setup.customerFreeText,
     services: assistant.setup.services,
     rules: assistant.setup.rules,
@@ -413,6 +416,7 @@ function fromAssistantRow(row) {
       photoUpload: row.photo_upload || "",
       launchStyle: row.launch_style || "",
       brandColor: row.brand_color || "#050505",
+      assistantLanguage: row.assistant_language || "English",
       customerFreeText: row.customer_free_text || "",
       services: row.services || "",
       rules: row.rules || ""
@@ -487,6 +491,7 @@ async function renderDashboard() {
         <dl>
           <div><dt>Avatar</dt><dd>${escapeHtml(assistant.setup.assistantAppearance)}</dd></div>
           <div><dt>Brand color</dt><dd><span class="color-dot" style="--dot: ${sanitizeColor(assistant.setup.brandColor || "#050505")}"></span>${escapeHtml(assistant.setup.brandColor || "#050505")}</dd></div>
+          <div><dt>Language</dt><dd>${escapeHtml(assistant.setup.assistantLanguage || "English")}</dd></div>
           <div><dt>Photo upload</dt><dd>${escapeHtml(assistant.setup.photoUpload || "-")}</dd></div>
           <div><dt>Launch style</dt><dd>${escapeHtml(assistant.setup.launchStyle || "-")}</dd></div>
           <div><dt>Questions</dt><dd>${escapeHtml(assistant.setup.questionCards || "-")}</dd></div>
@@ -514,6 +519,7 @@ async function renderAssistantPreview() {
       assistantAppearance: "Female White Outfit",
       questionCards: "Main concern, Budget, Upload Photo",
       brandColor: "#050505",
+      assistantLanguage: "English",
       services: "Initial Consultation\nRecommended Service\nFollow-up Appointment",
       rules: "If unsure, ask the customer to contact the business."
     }
@@ -538,7 +544,7 @@ async function renderAssistantPreview() {
         <img class="assistant-photo" src="${avatar}" alt="" />
         <p class="eyebrow">${escapeHtml(data.setup.industry)}</p>
         <h1>${escapeHtml(data.business.name)} Assistant</h1>
-        <p>Answer a few questions so the business can understand your need before booking.</p>
+        <p>${escapeHtml(getAssistantIntro(data.setup.assistantLanguage))}</p>
       </div>
       <form class="assistant-diagnostic" id="assistantDiagnosticForm">
         ${questions.map((question, index) => `
@@ -547,7 +553,7 @@ async function renderAssistantPreview() {
           </label>
         `).join("")}
         ${data.setup.customerFreeText === "Yes" ? `<label>Tell us more<textarea name="Additional comments" placeholder="Describe your need in your own words"></textarea></label>` : ""}
-        <button class="button" type="submit" id="assistantRecommend">Show Recommendation</button>
+        <button class="button" type="submit" id="assistantRecommend">${escapeHtml(getRecommendationButtonText(data.setup.assistantLanguage))}</button>
       </form>
       <section class="assistant-result" id="assistantResult" hidden>
         <p class="eyebrow">Recommendation</p>
@@ -562,7 +568,7 @@ async function renderAssistantPreview() {
     const result = document.getElementById("assistantResult");
     const text = document.getElementById("assistantRecommendationText");
     result.hidden = false;
-    text.textContent = "Creating recommendation...";
+    text.textContent = getLoadingText(data.setup.assistantLanguage);
     const answers = collectFormData(event.currentTarget);
     try {
       const response = await fetch("/api/recommend", {
@@ -581,6 +587,52 @@ async function renderAssistantPreview() {
 
 function sanitizeColor(color = "#050505") {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#050505";
+}
+
+function getAssistantIntro(language = "English") {
+  const copy = {
+    French: "Répondez à quelques questions afin que l'entreprise comprenne votre besoin avant la réservation.",
+    Arabic: "أجب عن بعض الأسئلة حتى تتمكن الشركة من فهم احتياجك قبل الحجز.",
+    Spanish: "Responde algunas preguntas para que el negocio entienda su necesidad antes de reservar.",
+    German: "Beantworten Sie einige Fragen, damit das Unternehmen Ihren Bedarf vor der Buchung versteht.",
+    Italian: "Rispondi ad alcune domande così l'attività può capire la tua esigenza prima della prenotazione.",
+    Portuguese: "Responda a algumas perguntas para que a empresa entenda sua necessidade antes da reserva.",
+    Dutch: "Beantwoord een paar vragen zodat het bedrijf uw behoefte begrijpt voordat u boekt."
+  };
+  return copy[language] || "Answer a few questions so the business can understand your need before booking.";
+}
+
+function getRecommendationButtonText(language = "English") {
+  const copy = {
+    French: "Afficher la recommandation",
+    Arabic: "اعرض التوصية",
+    Spanish: "Mostrar recomendación",
+    German: "Empfehlung anzeigen",
+    Italian: "Mostra raccomandazione",
+    Portuguese: "Mostrar recomendação",
+    Dutch: "Toon aanbeveling"
+  };
+  return copy[language] || "Show Recommendation";
+}
+
+function getLoadingText(language = "English") {
+  const copy = {
+    French: "Création de la recommandation...",
+    Arabic: "يتم إنشاء التوصية...",
+    Spanish: "Creando recomendación...",
+    German: "Empfehlung wird erstellt...",
+    Italian: "Creazione della raccomandazione...",
+    Portuguese: "Criando recomendação...",
+    Dutch: "Aanbeveling maken..."
+  };
+  return copy[language] || "Creating recommendation...";
+}
+
+function formatPhoneNumber(countryCode = "", number = "") {
+  const cleanNumber = String(number || "").trim();
+  if (!cleanNumber) return "";
+  if (cleanNumber.startsWith("+")) return cleanNumber;
+  return `${countryCode} ${cleanNumber}`.trim();
 }
 
 function getAvatarPath(appearance = "") {

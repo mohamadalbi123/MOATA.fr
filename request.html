@@ -39,8 +39,44 @@
           <div class="form-grid">
             <label>Business name <input name="businessName" required /></label>
             <label>Business website <input name="currentWebsite" placeholder="https://..." /></label>
-            <label>Phone number <input name="phone" /></label>
-            <label>WhatsApp <input name="whatsapp" placeholder="Optional" /></label>
+            <label>Phone number
+              <span class="phone-field">
+                <select name="phoneCountryCode" aria-label="Phone country code">
+                  <option value="+33">FR +33</option>
+                  <option value="+1">US/CA +1</option>
+                  <option value="+44">UK +44</option>
+                  <option value="+961">LB +961</option>
+                  <option value="+971">AE +971</option>
+                  <option value="+212">MA +212</option>
+                  <option value="+32">BE +32</option>
+                  <option value="+41">CH +41</option>
+                  <option value="+49">DE +49</option>
+                  <option value="+34">ES +34</option>
+                  <option value="+39">IT +39</option>
+                  <option value="+966">SA +966</option>
+                </select>
+                <input name="phone" inputmode="tel" placeholder="612345678" />
+              </span>
+            </label>
+            <label>WhatsApp
+              <span class="phone-field">
+                <select name="whatsappCountryCode" aria-label="WhatsApp country code">
+                  <option value="+33">FR +33</option>
+                  <option value="+1">US/CA +1</option>
+                  <option value="+44">UK +44</option>
+                  <option value="+961">LB +961</option>
+                  <option value="+971">AE +971</option>
+                  <option value="+212">MA +212</option>
+                  <option value="+32">BE +32</option>
+                  <option value="+41">CH +41</option>
+                  <option value="+49">DE +49</option>
+                  <option value="+34">ES +34</option>
+                  <option value="+39">IT +39</option>
+                  <option value="+966">SA +966</option>
+                </select>
+                <input name="whatsapp" inputmode="tel" placeholder="Optional" />
+              </span>
+            </label>
             <label>City <input name="city" placeholder="City" /></label>
             <label>Exact location or service area <input name="location" placeholder="Address, city area, or service radius" /></label>
             <label>Booking URL <input name="bookingUrl" placeholder="https://..." /></label>
@@ -286,6 +322,20 @@
               <label class="color-card"><input type="radio" name="brandColor" value="#116149" /><span style="--swatch: #116149"></span><strong>Emerald</strong></label>
               <label class="color-card"><input type="radio" name="brandColor" value="#1d4e89" /><span style="--swatch: #1d4e89"></span><strong>Blue</strong></label>
               <label class="color-card"><input type="radio" name="brandColor" value="#6d4c2f" /><span style="--swatch: #6d4c2f"></span><strong>Warm Neutral</strong></label>
+            </div>
+          </div>
+          <div class="setup-group">
+            <h3>Choose the assistant language</h3>
+            <p class="field-help">The customer-facing diagnostic, AI recommendation, and booking guidance will use this language.</p>
+            <div class="option-grid">
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="English" required checked /><span>English</span></label>
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="French" /><span>French</span></label>
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="Arabic" /><span>Arabic</span></label>
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="Spanish" /><span>Spanish</span></label>
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="German" /><span>German</span></label>
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="Italian" /><span>Italian</span></label>
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="Portuguese" /><span>Portuguese</span></label>
+              <label class="option-card"><input type="radio" name="assistantLanguage" value="Dutch" /><span>Dutch</span></label>
             </div>
           </div>
           <div class="setup-group">

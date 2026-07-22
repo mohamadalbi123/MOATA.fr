@@ -100,6 +100,7 @@ async function getAiRecommendation(assistant, answers) {
             "Never invent services, prices, guarantees, medical/legal/financial conclusions, or unavailable offers.",
             "Respect industry risk. For medical, dental, legal, veterinary, electrical, plumbing, construction, or other safety-sensitive areas, do not diagnose or give dangerous instructions. Recommend the appropriate appointment/service type and tell the customer to contact the professional for urgent or uncertain cases.",
             "If the customer needs urgent help, says there is danger, severe pain, emergency damage, or health/safety risk, recommend contacting the business/emergency service directly.",
+            "Answer in the assistantLanguage provided by the business.",
             "Return concise customer-facing text with: recommended service, why it fits, what to do next."
           ].join(" ")
         }
@@ -119,6 +120,7 @@ async function getAiRecommendation(assistant, answers) {
               location: assistant.location,
               bookingUrl: assistant.booking_url
             },
+            assistantLanguage: assistant.assistant_language || "English",
             allowedServices: assistant.services,
             selectedQuestions: assistant.question_cards,
             businessRules: assistant.rules,
