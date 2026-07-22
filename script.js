@@ -555,6 +555,7 @@ function saveAssistantLocal(assistant) {
   const existing = getLocalAssistants()[0];
   const assistantToSave = existing ? { ...assistant, id: existing.id, publicToken: createPublicToken() } : assistant;
   localStorage.setItem("moataAssistants", JSON.stringify([assistantToSave]));
+  localStorage.setItem("moataEditAssistant", JSON.stringify(assistantToSave));
 }
 
 async function getAssistants() {
@@ -715,10 +716,23 @@ async function renderDashboard() {
     ${activeSection(dashboardContext)}
   `;
   bindCopyButtons();
+  bindAssistantEditLinks();
   bindCheckoutButton(currentUser);
   bindBillingPortalButton();
   bindAccountActions(currentUser);
   bindBillingSwitcher();
+}
+
+function bindAssistantEditLinks() {
+  document.querySelectorAll(".assistant-edit-link").forEach((link) => {
+    link.addEventListener("click", () => {
+      try {
+        localStorage.setItem("moataEditAssistant", link.dataset.assistant || "");
+      } catch {
+        /* Local edit cache is only a convenience for file:// testing. */
+      }
+    });
+  });
 }
 
 function renderDashboardNav(activeView, assistantId) {
@@ -833,7 +847,7 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
           </div>
         `}
         <div class="compact-actions">
-          <a class="button button-light" href="${escapeHtml(getAssistantEditUrl(assistant))}">Edit Assistant Setup</a>
+          <a class="button button-light assistant-edit-link" href="${escapeHtml(getAssistantEditUrl(assistant))}" data-assistant='${escapeHtml(JSON.stringify(assistant))}'>Edit Assistant Setup</a>
         </div>
       </article>
     </section>
@@ -1323,15 +1337,18 @@ function bindAccountActions(currentUser) {
 
 async function hydrateBuilderForEdit() {
   const editId = new URLSearchParams(window.location.search).get("edit");
-  if (!editId) return;
   const urlAssistant = getAssistantFromUrl();
   const cachedAssistant = getCachedEditAssistant(editId);
-  if (urlAssistant || cachedAssistant) {
-    fillBuilderForm(urlAssistant || cachedAssistant);
+  if (!editId && !urlAssistant && !cachedAssistant) return;
+  const localAssistant = getLocalAssistants()[0] || null;
+  const immediateAssistant = urlAssistant || cachedAssistant || localAssistant;
+  if (immediateAssistant) {
+    fillBuilderForm(immediateAssistant);
     if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
   }
+  if (!editId) return;
   const assistants = await getAssistants();
-  const assistant = assistants.find((item) => item.id === editId) || cachedAssistant || assistants[0];
+  const assistant = assistants.find((item) => item.id === editId) || immediateAssistant || assistants[0];
   if (!assistant) return;
   fillBuilderForm(assistant);
   if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
