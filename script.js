@@ -4,6 +4,7 @@ const requestForm = document.getElementById("requestForm");
 const requestNote = document.getElementById("requestNote");
 const requestEmail = "mobalbi123@gmail.com";
 const storySteps = document.querySelectorAll(".story-step");
+const processStepCards = document.querySelectorAll(".process-steps .step-card");
 const industryInputs = document.querySelectorAll("input[name='industry']");
 const questionCards = document.querySelectorAll(".question-card");
 const serviceExamples = document.querySelectorAll(".service-examples article");
@@ -31,6 +32,17 @@ if (storySteps.length) {
     activeStoryStep = (activeStoryStep + 1) % storySteps.length;
     storySteps[activeStoryStep].classList.add("active");
   }, 3600);
+}
+
+if (processStepCards.length) {
+  let activeProcessStep = 0;
+  processStepCards[activeProcessStep].classList.add("active");
+  setInterval(() => {
+    processStepCards[activeProcessStep].classList.remove("active");
+    activeProcessStep = (activeProcessStep + 1) % processStepCards.length;
+    processStepCards[activeProcessStep].classList.add("active");
+    processStepCards[activeProcessStep].scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 2600);
 }
 
 if (industryInputs.length && questionCards.length) {
@@ -785,27 +797,20 @@ async function renderAssistantPreview() {
 
   assistantPreviewRoot.innerHTML = `
     <section class="assistant-shell" style="--assistant-accent: ${brandColor}">
-      <div class="assistant-panel">
-        <div class="assistant-mini">
-          <img class="assistant-avatar-icon" src="${avatar}" alt="" />
-          <div>
-            <p class="eyebrow">${escapeHtml(data.setup.industry)}</p>
-            <h1>${escapeHtml(data.business.name)} Assistant</h1>
-          </div>
-        </div>
-        <p class="assistant-lede">${escapeHtml(getAssistantIntro(data.setup.assistantLanguage))}</p>
-        <div class="assistant-note">
-          <strong>Private consultation</strong>
-          <span>Your answers help the business recommend the right service from its real offer.</span>
-        </div>
-      </div>
+      <header class="assistant-page-header">
+        <p class="eyebrow">${escapeHtml(data.setup.industry)}</p>
+        <h1>${escapeHtml(data.business.name)} Assistant</h1>
+        <p>${escapeHtml(getAssistantIntro(data.setup.assistantLanguage))}</p>
+      </header>
       <form class="assistant-diagnostic" id="assistantDiagnosticForm">
         <div class="assistant-form-header">
-          <p class="eyebrow">Step 1</p>
-          <h2>Tell us what you need.</h2>
+          <span>Private diagnostic</span>
+          <strong>Answer the questions below.</strong>
         </div>
-        ${questions.map((question, index) => renderQuestionControl(question, index === 0)).join("")}
-        ${data.setup.customerFreeText === "Yes" ? `<label>Tell us more<textarea name="Additional comments" placeholder="Describe your need in your own words"></textarea></label>` : ""}
+        <div class="assistant-question-list">
+          ${questions.map((question, index) => renderQuestionControl(question, index === 0, index + 1)).join("")}
+          ${data.setup.customerFreeText === "Yes" ? `<div class="assistant-question-card"><span class="assistant-question-number">${String(questions.length + 1).padStart(2, "0")}</span><label>Tell us more<textarea name="Additional comments" placeholder="Describe your need in your own words"></textarea></label></div>` : ""}
+        </div>
         <button class="button" type="submit" id="assistantRecommend">${escapeHtml(getRecommendationButtonText(data.setup.assistantLanguage))}</button>
       </form>
       <section class="assistant-result" id="assistantResult" hidden>
@@ -814,9 +819,20 @@ async function renderAssistantPreview() {
         <p id="assistantRecommendationText">MOATA is preparing the recommendation using the business services and your answers.</p>
         ${data.business.bookingUrl ? `<a class="button" href="${escapeHtml(data.business.bookingUrl)}">Continue to Booking</a>` : ""}
       </section>
+      <button class="assistant-floating-avatar" id="assistantRestart" type="button" aria-label="Restart diagnostic">
+        <img src="${avatar}" alt="" />
+        <span>Restart</span>
+      </button>
     </section>
   `;
-  document.getElementById("assistantDiagnosticForm")?.addEventListener("submit", async (event) => {
+  const diagnosticForm = document.getElementById("assistantDiagnosticForm");
+  document.getElementById("assistantRestart")?.addEventListener("click", () => {
+    diagnosticForm?.reset();
+    const result = document.getElementById("assistantResult");
+    if (result) result.hidden = true;
+    diagnosticForm?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  diagnosticForm?.addEventListener("submit", async (event) => {
     event.preventDefault();
     const result = document.getElementById("assistantResult");
     const text = document.getElementById("assistantRecommendationText");
@@ -841,77 +857,84 @@ async function renderAssistantPreview() {
   });
 }
 
-function renderQuestionControl(question, required = false) {
+function renderQuestionControl(question, required = false, number = 1) {
   const name = escapeHtml(question);
   const requiredAttr = required ? "required" : "";
   const normalized = question.toLowerCase();
   const label = escapeHtml(question);
+  const fieldNumber = String(number).padStart(2, "0");
+  const wrap = (control) => `
+    <div class="assistant-question-card">
+      <span class="assistant-question-number">${fieldNumber}</span>
+      ${control}
+    </div>
+  `;
 
   if (normalized === "gender") {
-    return selectControl(label, name, requiredAttr, ["", "Female", "Male", "Non-binary", "Prefer not to say"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Female", "Male", "Non-binary", "Prefer not to say"]));
   }
   if (normalized === "preferred contact method" || normalized === "contact method") {
-    return selectControl(label, name, requiredAttr, ["", "Email", "Phone", "WhatsApp", "SMS"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Email", "Phone", "WhatsApp", "SMS"]));
   }
   if (normalized === "skin type") {
-    return selectControl(label, name, requiredAttr, ["", "Normal", "Dry", "Oily", "Combination", "Sensitive", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Normal", "Dry", "Oily", "Combination", "Sensitive", "Not sure"]));
   }
   if (normalized === "goal" || normalized.includes("what result do you want") || normalized.includes("what do you want to achieve")) {
-    return selectControl(label, name, requiredAttr, ["", "Fix a problem", "Improve appearance", "Maintenance", "Emergency help", "Get advice", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Fix a problem", "Improve appearance", "Maintenance", "Emergency help", "Get advice", "Not sure"]));
   }
   if (normalized === "main concern" || normalized.includes("biggest skin concern") || normalized.includes("what is bothering you")) {
-    return selectControl(label, name, requiredAttr, ["", "Pain or discomfort", "Damage", "Appearance", "Sensitive reaction", "New problem", "Maintenance", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Pain or discomfort", "Damage", "Appearance", "Sensitive reaction", "New problem", "Maintenance", "Not sure"]));
   }
   if (normalized.includes("how long") || normalized.includes("when did it start") || normalized.includes("when did symptoms begin")) {
-    return selectControl(label, name, requiredAttr, ["", "Today", "A few days", "1-2 weeks", "More than 1 month", "More than 6 months", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Today", "A few days", "1-2 weeks", "More than 1 month", "More than 6 months", "Not sure"]));
   }
   if (normalized === "hair length") {
-    return selectControl(label, name, requiredAttr, ["", "Short", "Medium", "Long", "Very long", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Short", "Medium", "Long", "Very long", "Not sure"]));
   }
   if (normalized === "hair thickness") {
-    return selectControl(label, name, requiredAttr, ["", "Fine", "Medium", "Thick", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Fine", "Medium", "Thick", "Not sure"]));
   }
   if (normalized.includes("hair type")) {
-    return selectControl(label, name, requiredAttr, ["", "Straight", "Wavy", "Curly", "Coily", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Straight", "Wavy", "Curly", "Coily", "Not sure"]));
   }
   if (normalized.includes("property type")) {
-    return selectControl(label, name, requiredAttr, ["", "House", "Apartment", "Office", "Commercial space", "Other"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "House", "Apartment", "Office", "Commercial space", "Other"]));
   }
   if (normalized.includes("house or apartment")) {
-    return selectControl(label, name, requiredAttr, ["", "House", "Apartment", "Other"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "House", "Apartment", "Other"]));
   }
   if (normalized.includes("pain level")) {
-    return selectControl(label, name, requiredAttr, ["", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]));
   }
   if (isYesNoQuestion(normalized)) {
-    return selectControl(label, name, requiredAttr, ["", "Yes", "No", "Not sure"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Yes", "No", "Not sure"]));
   }
   if (normalized.includes("urgency") || normalized.includes("urgent")) {
-    return selectControl(label, name, requiredAttr, ["", "Low", "Medium", "High", "Emergency"]);
+    return wrap(selectControl(label, name, requiredAttr, ["", "Low", "Medium", "High", "Emergency"]));
   }
   if (normalized === "age" || normalized.includes("bedrooms") || normalized.includes("employees") || normalized.includes("height") || normalized.includes("weight") || normalized.includes("mileage") || normalized.includes("year")) {
-    return `<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter number" /></label>`;
+    return wrap(`<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter number" /></label>`);
   }
   if (normalized === "budget" || normalized.includes("annual revenue")) {
-    return `<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter amount" /></label>`;
+    return wrap(`<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter amount" /></label>`);
   }
   if (normalized.includes("preferred date") || normalized.includes("event date") || normalized.includes("deadline") || normalized.includes("court date")) {
-    return `<label>${label}<input type="date" name="${name}" ${requiredAttr} /></label>`;
+    return wrap(`<label>${label}<input type="date" name="${name}" ${requiredAttr} /></label>`);
   }
   if (normalized.includes("preferred time")) {
-    return `<label>${label}<input type="time" name="${name}" ${requiredAttr} /></label>`;
+    return wrap(`<label>${label}<input type="time" name="${name}" ${requiredAttr} /></label>`);
   }
   if (normalized.includes("upload photo") || normalized.includes("inspiration photo")) {
-    return `<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="image/*" /></label>`;
+    return wrap(`<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="image/*" /></label>`);
   }
   if (normalized.includes("upload video")) {
-    return `<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="video/*" /></label>`;
+    return wrap(`<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="video/*" /></label>`);
   }
   if (normalized.includes("upload document") || normalized.includes("documents")) {
-    return `<label>${label}<input type="file" name="${name}" ${requiredAttr} /></label>`;
+    return wrap(`<label>${label}<input type="file" name="${name}" ${requiredAttr} /></label>`);
   }
 
-  return `<label>${label}<input name="${name}" ${requiredAttr} placeholder="Your answer" /></label>`;
+  return wrap(`<label>${label}<input name="${name}" ${requiredAttr} placeholder="Your answer" /></label>`);
 }
 
 function isYesNoQuestion(normalized) {
