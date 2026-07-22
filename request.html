@@ -41,40 +41,34 @@
             <label>Business website <input name="currentWebsite" placeholder="https://..." /></label>
             <label>Phone number
               <span class="phone-field">
-                <select name="phoneCountryCode" aria-label="Phone country code">
-                  <option value="+33">FR +33</option>
-                  <option value="+1">US/CA +1</option>
-                  <option value="+44">UK +44</option>
-                  <option value="+961">LB +961</option>
-                  <option value="+971">AE +971</option>
-                  <option value="+212">MA +212</option>
-                  <option value="+32">BE +32</option>
-                  <option value="+41">CH +41</option>
-                  <option value="+49">DE +49</option>
-                  <option value="+34">ES +34</option>
-                  <option value="+39">IT +39</option>
-                  <option value="+966">SA +966</option>
+                <select class="phone-code" name="phoneCountryCode" aria-label="Phone country code">
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+961">🇱🇧 +961</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+212">🇲🇦 +212</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+34">🇪🇸 +34</option>
+                  <option value="+39">🇮🇹 +39</option>
                 </select>
-                <input name="phone" inputmode="tel" placeholder="612345678" />
+                <input class="phone-number" name="phone" inputmode="tel" autocomplete="tel" placeholder="6 12 34 56 78" />
               </span>
             </label>
             <label>WhatsApp
               <span class="phone-field">
-                <select name="whatsappCountryCode" aria-label="WhatsApp country code">
-                  <option value="+33">FR +33</option>
-                  <option value="+1">US/CA +1</option>
-                  <option value="+44">UK +44</option>
-                  <option value="+961">LB +961</option>
-                  <option value="+971">AE +971</option>
-                  <option value="+212">MA +212</option>
-                  <option value="+32">BE +32</option>
-                  <option value="+41">CH +41</option>
-                  <option value="+49">DE +49</option>
-                  <option value="+34">ES +34</option>
-                  <option value="+39">IT +39</option>
-                  <option value="+966">SA +966</option>
+                <select class="phone-code" name="whatsappCountryCode" aria-label="WhatsApp country code">
+                  <option value="+33">🇫🇷 +33</option>
+                  <option value="+1">🇺🇸 +1</option>
+                  <option value="+44">🇬🇧 +44</option>
+                  <option value="+961">🇱🇧 +961</option>
+                  <option value="+971">🇦🇪 +971</option>
+                  <option value="+212">🇲🇦 +212</option>
+                  <option value="+49">🇩🇪 +49</option>
+                  <option value="+34">🇪🇸 +34</option>
+                  <option value="+39">🇮🇹 +39</option>
                 </select>
-                <input name="whatsapp" inputmode="tel" placeholder="Optional" />
+                <input class="phone-number" name="whatsapp" inputmode="tel" autocomplete="tel" placeholder="Optional" />
               </span>
             </label>
             <label>City <input name="city" placeholder="City" /></label>
