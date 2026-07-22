@@ -1295,6 +1295,37 @@ p {
   font-size: 13px;
 }
 
+.custom-color-field {
+  margin-top: 18px;
+  max-width: 520px;
+}
+
+.color-input-row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+
+.brand-color-picker {
+  min-height: 50px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  padding: 6px;
+  background: var(--soft);
+}
+
+.color-input-row input:not(.brand-color-picker) {
+  border: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.color-input-row:focus-within {
+  border-color: var(--black);
+  box-shadow: inset 0 0 0 1px var(--black);
+}
+
 .wizard-controls {
   display: flex;
   justify-content: space-between;

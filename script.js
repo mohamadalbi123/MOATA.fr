@@ -17,6 +17,8 @@ const assistantPreviewRoot = document.getElementById("assistantPreviewRoot");
 const authForm = document.getElementById("authForm");
 const authNote = document.getElementById("authNote");
 const googleAuthButton = document.getElementById("googleAuthButton");
+const brandColorPicker = document.querySelector("input[name='brandColorPicker']");
+const customBrandColor = document.querySelector("input[name='customBrandColor']");
 
 if (storySteps.length) {
   let activeStoryStep = 0;
@@ -47,6 +49,17 @@ if (wizardSteps.length) {
     if (!validateWizardStep(wizardSteps[currentWizardStep])) return;
     currentWizardStep = Math.min(wizardSteps.length - 1, currentWizardStep + 1);
     showWizardStep(currentWizardStep);
+  });
+}
+
+if (brandColorPicker && customBrandColor) {
+  brandColorPicker.addEventListener("input", () => {
+    customBrandColor.value = brandColorPicker.value;
+  });
+  customBrandColor.addEventListener("input", () => {
+    if (isHexColor(customBrandColor.value)) {
+      brandColorPicker.value = customBrandColor.value;
+    }
   });
 }
 
@@ -304,7 +317,7 @@ function createAssistantRecord(data) {
       questionCards: data.questionCards || "",
       photoUpload: data.photoUpload || "",
       launchStyle: data.launchStyle || "",
-      brandColor: data.brandColor || "#050505",
+      brandColor: getSelectedBrandColor(data),
       assistantLanguage: data.assistantLanguage || "English",
       customerFreeText: data.customerFreeText || "",
       services: data.offers || "",
@@ -587,6 +600,17 @@ async function renderAssistantPreview() {
 
 function sanitizeColor(color = "#050505") {
   return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#050505";
+}
+
+function getSelectedBrandColor(data) {
+  if (isHexColor(data.customBrandColor)) return data.customBrandColor;
+  if (isHexColor(data.brandColorPicker)) return data.brandColorPicker;
+  if (isHexColor(data.brandColor)) return data.brandColor;
+  return "#050505";
+}
+
+function isHexColor(color = "") {
+  return /^#[0-9a-fA-F]{6}$/.test(String(color).trim());
 }
 
 function getAssistantIntro(language = "English") {
