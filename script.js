@@ -106,6 +106,7 @@ if (rulesField) {
 }
 
 if (requestForm) {
+  requestForm.noValidate = true;
   hydrateBuilderForEdit();
 }
 
@@ -1476,12 +1477,15 @@ function showWizardStep(index) {
 }
 
 function validateWizardStep(step) {
-  const fields = [...step.querySelectorAll("input, select, textarea")];
+  const fields = [...step.querySelectorAll("input, select, textarea")].filter((field) => field.type !== "hidden" && !field.disabled);
+  const checkedGroups = new Set();
   for (const field of fields) {
     normalizeUrlField(field);
-    if (!field.checkValidity()) {
-      setWizardMessage(getValidationMessage(field));
-      field.reportValidity();
+    const validationMessage = getFieldValidationMessage(field, checkedGroups);
+    if (validationMessage) {
+      setWizardMessage(validationMessage);
+      field.focus({ preventScroll: true });
+      field.scrollIntoView({ behavior: "smooth", block: "center" });
       return false;
     }
   }
@@ -1501,11 +1505,42 @@ function getValidationMessage(field) {
   return `${label} needs to be checked before you can continue.`;
 }
 
+function getFieldValidationMessage(field, checkedGroups) {
+  const label = getFieldLabel(field);
+  if (field.type === "radio") {
+    if (checkedGroups.has(field.name)) return "";
+    checkedGroups.add(field.name);
+    const group = [...field.form.querySelectorAll(`input[type="radio"][name="${CSS.escape(field.name)}"]`)].filter((input) => input.closest(".wizard-step") === field.closest(".wizard-step"));
+    const groupIsRequired = group.some((input) => input.required);
+    const groupHasValue = group.some((input) => input.checked);
+    return groupIsRequired && !groupHasValue ? `Choose one option for ${label} before you can continue.` : "";
+  }
+  if (field.required && !String(field.value || "").trim()) return `${label} is required before you can continue.`;
+  if (field.type === "url" && field.value && !isValidHttpUrl(field.value)) return `${label} must be a valid link, for example https://example.com.`;
+  if (field.name === "customBrandColor" && field.value && !isHexColor(field.value)) return `${label} must be a valid color code, for example #050505.`;
+  return "";
+}
+
+function getFieldLabel(field) {
+  const label = field.closest("label");
+  const ownText = label ? [...label.childNodes].find((node) => node.nodeType === Node.TEXT_NODE)?.textContent?.trim() : "";
+  return ownText || field.closest(".wizard-step")?.querySelector("h2")?.textContent?.trim() || field.name || "this field";
+}
+
 function normalizeUrlField(field) {
   if (field.type !== "url") return;
   const value = field.value.trim();
   if (!value || /^https?:\/\//i.test(value)) return;
   field.value = `https://${value}`;
+}
+
+function isValidHttpUrl(value = "") {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function downloadJson({ filename, payload }) {
