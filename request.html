@@ -395,7 +395,7 @@
         </div>
         <p class="wizard-note" id="wizardNote" aria-live="polite" hidden></p>
 
-        <div class="form-actions">
+        <div class="form-actions" hidden>
           <button class="button" type="submit">Save Assistant</button>
           <button class="button button-light" type="submit">Next: Dashboard</button>
         </div>
@@ -405,5 +405,84 @@
     </main>
 
     <script src="script.js"></script>
+    <script>
+      (() => {
+        const steps = [...document.querySelectorAll(".wizard-step")];
+        const progress = [...document.querySelectorAll(".wizard-progress span")];
+        const back = document.getElementById("wizardBack");
+        const next = document.getElementById("wizardNext");
+        const actions = document.querySelector("#requestForm .form-actions");
+        const note = document.getElementById("wizardNote");
+        if (!steps.length || !next || next.dataset.inlineWizard === "true") return;
+        next.dataset.inlineWizard = "true";
+        let index = Math.max(0, steps.findIndex((step) => step.classList.contains("active")));
+
+        const show = () => {
+          steps.forEach((step, stepIndex) => step.classList.toggle("active", stepIndex === index));
+          const title = steps[index]?.dataset.stepTitle || "";
+          progress.forEach((item) => item.classList.toggle("active", item.textContent.trim() === title));
+          if (back) back.disabled = index === 0;
+          next.hidden = index === steps.length - 1;
+          if (actions) actions.hidden = index !== steps.length - 1;
+          if (note) {
+            note.hidden = true;
+            note.textContent = "";
+          }
+        };
+
+        const message = (text) => {
+          if (!note) return;
+          note.textContent = text;
+          note.hidden = false;
+        };
+
+        const normalizeUrls = () => {
+          steps[index].querySelectorAll('input[type="url"]').forEach((field) => {
+            const value = field.value.trim();
+            if (value && !/^https?:\/\//i.test(value)) field.value = `https://${value}`;
+          });
+        };
+
+        const valid = () => {
+          normalizeUrls();
+          if (steps[index]?.dataset.stepTitle === "Business") {
+            const businessName = steps[index].querySelector('input[name="businessName"]');
+            if (!businessName?.value.trim()) {
+              message("Business name is required before you can continue.");
+              businessName?.focus();
+              return false;
+            }
+          }
+          const requiredRadio = steps[index].querySelector('input[type="radio"][required]');
+          if (requiredRadio) {
+            const selected = steps[index].querySelector(`input[type="radio"][name="${requiredRadio.name}"]:checked`);
+            if (!selected) {
+              message("Choose one option before you can continue.");
+              return false;
+            }
+          }
+          return true;
+        };
+
+        next.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          if (!valid()) return;
+          index = Math.min(index + 1, steps.length - 1);
+          window.moataWizardStep = index;
+          show();
+        }, true);
+
+        back?.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          index = Math.max(index - 1, 0);
+          window.moataWizardStep = index;
+          show();
+        }, true);
+
+        show();
+      })();
+    </script>
   </body>
 </html>
