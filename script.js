@@ -741,7 +741,7 @@ function renderDashboardHome({ assistant, userName, userEmail }) {
   return `
     <section class="dashboard-overview-grid">
       ${renderDashboardCard("Account Settings", userName || "MOATA Client", userEmail, getDashboardUrl("account", assistant.id))}
-      ${renderDashboardCard("Billing", "€39 / month", "Subscription, checkout, and plan details.", getDashboardUrl("billing", assistant.id))}
+      ${renderDashboardCard("Billing", "$39 / month", "Subscription, checkout, and plan details.", getDashboardUrl("billing", assistant.id))}
       ${renderDashboardCard("My Assistant", assistant.business.name, "Edit setup, test the assistant, copy link, and copy embed code.", getDashboardUrl("assistant", assistant.id))}
     </section>
   `;
@@ -875,7 +875,7 @@ function renderDashboardBilling({ assistant }) {
             <label><input type="radio" name="billingInterval" value="monthly" checked /> <span>Monthly</span></label>
             <label><input type="radio" name="billingInterval" value="yearly" /> <span>Yearly</span></label>
           </div>
-          <p class="billing-price" id="billingPrice">€39 <span>/ month</span></p>
+          <p class="billing-price" id="billingPrice">$39 <span>/ month</span></p>
           <p class="form-note" id="billingPlanNote">Pay monthly. Cancel before the next billing period.</p>
           <div class="compact-actions">
             <button class="button" id="checkoutButton" type="button" data-assistant-id="${escapeHtml(assistant.id)}">Continue to Checkout</button>
@@ -1236,9 +1236,9 @@ function setPricingPlan(plan) {
   const period = document.getElementById("pricingPeriod");
   const note = document.getElementById("pricingSaveNote");
   if (label) label.textContent = isYearly ? "Yearly" : "Monthly";
-  if (amount) amount.textContent = isYearly ? "€390" : "€39";
+  if (amount) amount.textContent = isYearly ? "$390" : "$39";
   if (period) period.textContent = isYearly ? "/ year" : "/ month";
-  if (note) note.textContent = isYearly ? "Paid yearly. Equivalent to €32.50/month." : "Pay monthly. Cancel before the next billing period.";
+  if (note) note.textContent = isYearly ? "Paid yearly. Equivalent to $32.50/month." : "Pay monthly. Cancel before the next billing period.";
 }
 
 function bindCheckoutButton(currentUser) {
@@ -1294,8 +1294,8 @@ function bindBillingSwitcher() {
   const note = document.getElementById("billingPlanNote");
   const updateBillingCopy = () => {
     const interval = document.querySelector("input[name='billingInterval']:checked")?.value || "monthly";
-    if (price) price.innerHTML = interval === "yearly" ? "€390 <span>/ year</span>" : "€39 <span>/ month</span>";
-    if (note) note.textContent = interval === "yearly" ? "Paid yearly. Equivalent to €32.50/month." : "Pay monthly. Cancel before the next billing period.";
+    if (price) price.innerHTML = interval === "yearly" ? "$390 <span>/ year</span>" : "$39 <span>/ month</span>";
+    if (note) note.textContent = interval === "yearly" ? "Paid yearly. Equivalent to $32.50/month." : "Pay monthly. Cancel before the next billing period.";
   };
   billingInputs.forEach((input) => input.addEventListener("change", updateBillingCopy));
   updateBillingCopy();
