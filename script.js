@@ -9,7 +9,7 @@ const industryInputs = document.querySelectorAll("input[name='industry']");
 const specialtyPanel = document.getElementById("specialtyPanel");
 const specialtyOptions = document.getElementById("specialtyOptions");
 const specialtyTitle = document.getElementById("specialtyTitle");
-const questionCards = document.querySelectorAll(".question-card");
+let questionCards = document.querySelectorAll(".question-card");
 const serviceExamples = document.querySelectorAll(".service-examples article");
 const wizardSteps = document.querySelectorAll(".wizard-step");
 const wizardProgress = document.querySelectorAll(".wizard-progress span");
@@ -59,6 +59,8 @@ if (pricingPlanButtons.length) {
   });
   setPricingPlan("monthly");
 }
+
+renderQuestionCardLibrary();
 
 if (industryInputs.length && questionCards.length) {
   industryInputs.forEach((input) => {
@@ -435,6 +437,250 @@ async function guardBuilderForExistingAssistant() {
   requestNote.textContent = "You already have one MOATA assistant. Submitting this form will update your existing assistant setup.";
 }
 
+const questionLibrary = {
+  Universal: ["Name", "Email", "Phone", "Preferred Contact Method", "Additional Notes"],
+  "Beauty Salon / Skincare": [
+    "Age",
+    "Skin Type",
+    "Skin Tone",
+    "Main Concern",
+    "Sensitive Skin",
+    "Acne",
+    "Dry Skin",
+    "Oily Skin",
+    "Combination Skin",
+    "Allergies",
+    "Pregnancy",
+    "Breastfeeding",
+    "Current Products",
+    "Previous Treatments",
+    "Medications",
+    "Botox/Fillers",
+    "Sun Exposure",
+    "Upload Photo"
+  ],
+  "Hair Salon": [
+    "Age",
+    "Hair Type",
+    "Hair Length",
+    "Hair Thickness",
+    "Hair Color",
+    "Dyed Hair",
+    "Bleached Hair",
+    "Damaged Hair",
+    "Curly or Straight",
+    "Scalp Condition",
+    "Hair Goal",
+    "Allergies",
+    "Previous Treatments",
+    "Upload Photo"
+  ],
+  "Barber Shop": [
+    "Age",
+    "Hair Type",
+    "Beard Length",
+    "Beard Type",
+    "Sensitive Skin",
+    "Hair Loss",
+    "Hair Style Wanted",
+    "Beard Style Wanted",
+    "Previous Haircut",
+    "Upload Photo"
+  ],
+  "Dental Clinic": [
+    "Age",
+    "Main Problem",
+    "Pain Level",
+    "Tooth Location",
+    "Swelling",
+    "Bleeding",
+    "Broken Tooth",
+    "Cold Sensitivity",
+    "Hot Sensitivity",
+    "Medical Conditions",
+    "Medications",
+    "Allergies",
+    "Upload Photo"
+  ],
+  "Medical Clinic": [
+    "Age",
+    "Gender",
+    "Height",
+    "Weight",
+    "Main Symptoms",
+    "Duration",
+    "Pain Level",
+    "Fever",
+    "Allergies",
+    "Medication",
+    "Medical History",
+    "Smoking",
+    "Pregnancy",
+    "Upload Photo"
+  ],
+  Physiotherapist: [
+    "Age",
+    "Height",
+    "Weight",
+    "Pain Area",
+    "Pain Level",
+    "Injury",
+    "Surgery",
+    "Duration",
+    "Mobility",
+    "Sports Activity",
+    "Occupation",
+    "Previous Therapy",
+    "Upload Photo"
+  ],
+  Construction: [
+    "Project Type",
+    "Property Type",
+    "Budget",
+    "Timeline",
+    "Property Size",
+    "Number of Rooms",
+    "Existing Condition",
+    "Materials Preference",
+    "Planning Permission",
+    "Upload Photos"
+  ],
+  Electrician: [
+    "Service Needed",
+    "Property Type",
+    "Electrical Problem",
+    "Emergency",
+    "Power Outage",
+    "Fuse Issue",
+    "New Installation",
+    "Property Age",
+    "Upload Photos"
+  ],
+  Plumber: [
+    "Service Needed",
+    "Leak",
+    "Blockage",
+    "Water Pressure",
+    "Boiler Issue",
+    "Emergency",
+    "Property Type",
+    "Property Age",
+    "Upload Photos"
+  ],
+  "Cleaning Company": [
+    "Property Type",
+    "Number of Rooms",
+    "Property Size",
+    "Deep Cleaning",
+    "Regular Cleaning",
+    "Move In/Out",
+    "Pets",
+    "Frequency",
+    "Preferred Date",
+    "Upload Photos"
+  ],
+  "Auto Repair": [
+    "Vehicle Brand",
+    "Model",
+    "Year",
+    "Mileage",
+    "Main Problem",
+    "Warning Lights",
+    "Accident",
+    "Starting Issue",
+    "Strange Noise",
+    "Upload Photos"
+  ],
+  Veterinary: [
+    "Animal Type",
+    "Breed",
+    "Age",
+    "Weight",
+    "Main Symptoms",
+    "Eating Normally",
+    "Drinking Normally",
+    "Vaccinated",
+    "Medication",
+    "Upload Photo"
+  ],
+  "Real Estate": [
+    "Buy or Sell",
+    "Property Type",
+    "Budget",
+    "Preferred City",
+    "Bedrooms",
+    "Bathrooms",
+    "Property Size",
+    "Financing Ready",
+    "Timeline"
+  ],
+  Lawyer: [
+    "Legal Matter",
+    "Urgency",
+    "Date of Incident",
+    "Country",
+    "Documents Available",
+    "Court Date",
+    "Opposing Party",
+    "Upload Documents"
+  ],
+  Accountant: [
+    "Individual/Business",
+    "Business Type",
+    "Annual Revenue",
+    "Employees",
+    "VAT Registered",
+    "Payroll Needed",
+    "Bookkeeping Needed",
+    "Tax Return Needed",
+    "Accounting Software"
+  ],
+  "Personal Trainer": [
+    "Age",
+    "Gender",
+    "Height",
+    "Weight",
+    "Fitness Goal",
+    "Experience Level",
+    "Injuries",
+    "Medical Conditions",
+    "Workout Days",
+    "Gym Access",
+    "Diet Preference",
+    "Upload Photo"
+  ],
+  Other: [
+    "Age",
+    "Gender",
+    "Budget",
+    "Main Problem",
+    "Goal",
+    "Timeline",
+    "Location",
+    "Preferred Contact",
+    "Upload Photo",
+    "Upload Document",
+    "Additional Notes"
+  ]
+};
+
+function renderQuestionCardLibrary() {
+  const container = document.getElementById("questionCards");
+  if (!container) return;
+  const universalCards = questionLibrary.Universal.map((question) => createQuestionCard(question, "Universal", true));
+  const industryCards = Object.entries(questionLibrary)
+    .filter(([industry]) => industry !== "Universal")
+    .flatMap(([industry, questions]) => questions.map((question) => createQuestionCard(question, industry, false)));
+  container.innerHTML = [...universalCards, ...industryCards].join("");
+  questionCards = document.querySelectorAll(".question-card");
+}
+
+function createQuestionCard(question, industry, isUniversal = false) {
+  const classes = isUniversal ? "option-card question-card universal" : "option-card question-card";
+  const data = isUniversal ? "" : ` data-industries="${escapeHtml(industry)}"`;
+  return `<label class="${classes}"${data}><input type="checkbox" name="questionCards" value="${escapeHtml(question)}" /><span>${escapeHtml(question)}</span></label>`;
+}
+
 function updateQuestionCards(industry) {
   questionCards.forEach((card) => {
     const industries = card.dataset.industries || "";
@@ -442,7 +688,7 @@ function updateQuestionCards(industry) {
       .split("|")
       .map((item) => item.trim())
       .filter(Boolean);
-    const shouldShow = card.classList.contains("universal") || !industry || industry === "Other" || industryList.includes(industry) || industries === industry;
+    const shouldShow = card.classList.contains("universal") || !industry || industryList.includes(industry) || industries === industry;
     card.classList.toggle("is-hidden", !shouldShow);
     if (!shouldShow) {
       const input = card.querySelector("input");
@@ -1201,13 +1447,16 @@ function renderQuestionControl(question, required = false, number = 1) {
   if (normalized === "skin type") {
     return wrap(selectControl(label, name, requiredAttr, ["", "Normal", "Dry", "Oily", "Combination", "Sensitive", "Not sure"]));
   }
+  if (normalized === "skin tone") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Very fair", "Fair", "Medium", "Olive", "Brown", "Deep", "Prefer not to say"]));
+  }
   if (normalized === "goal" || normalized.includes("what result do you want") || normalized.includes("what do you want to achieve")) {
     return wrap(selectControl(label, name, requiredAttr, ["", "Fix a problem", "Improve appearance", "Maintenance", "Emergency help", "Get advice", "Not sure"]));
   }
-  if (normalized === "main concern" || normalized.includes("biggest skin concern") || normalized.includes("what is bothering you")) {
+  if (normalized === "main concern" || normalized === "main problem" || normalized.includes("biggest skin concern") || normalized.includes("what is bothering you")) {
     return wrap(selectControl(label, name, requiredAttr, ["", "Pain or discomfort", "Damage", "Appearance", "Sensitive reaction", "New problem", "Maintenance", "Not sure"]));
   }
-  if (normalized.includes("how long") || normalized.includes("when did it start") || normalized.includes("when did symptoms begin")) {
+  if (normalized === "duration" || normalized.includes("how long") || normalized.includes("when did it start") || normalized.includes("when did symptoms begin")) {
     return wrap(selectControl(label, name, requiredAttr, ["", "Today", "A few days", "1-2 weeks", "More than 1 month", "More than 6 months", "Not sure"]));
   }
   if (normalized === "hair length") {
@@ -1219,6 +1468,24 @@ function renderQuestionControl(question, required = false, number = 1) {
   if (normalized.includes("hair type")) {
     return wrap(selectControl(label, name, requiredAttr, ["", "Straight", "Wavy", "Curly", "Coily", "Not sure"]));
   }
+  if (normalized === "curly or straight") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Straight", "Wavy", "Curly", "Coily", "Mixed", "Not sure"]));
+  }
+  if (normalized === "hair color") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Black", "Brown", "Blonde", "Red", "Grey/white", "Colored/fantasy", "Not sure"]));
+  }
+  if (normalized === "hair goal" || normalized === "hair style wanted" || normalized === "beard style wanted") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Cut", "Color", "Repair", "Style change", "Maintenance", "Special event", "Not sure"]));
+  }
+  if (normalized === "beard length") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Clean shave", "Short", "Medium", "Long", "Not sure"]));
+  }
+  if (normalized === "beard type") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Patchy", "Full", "Curly", "Straight", "Sensitive skin", "Not sure"]));
+  }
+  if (normalized === "scalp condition") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Normal", "Dry", "Oily", "Sensitive", "Dandruff", "Itchy", "Not sure"]));
+  }
   if (normalized.includes("property type")) {
     return wrap(selectControl(label, name, requiredAttr, ["", "House", "Apartment", "Office", "Commercial space", "Other"]));
   }
@@ -1228,25 +1495,55 @@ function renderQuestionControl(question, required = false, number = 1) {
   if (normalized.includes("pain level")) {
     return wrap(selectControl(label, name, requiredAttr, ["", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]));
   }
+  if (normalized === "urgency" || normalized === "emergency") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Low", "Medium", "High", "Emergency"]));
+  }
+  if (normalized === "timeline") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "As soon as possible", "This week", "This month", "1-3 months", "Flexible"]));
+  }
+  if (normalized === "frequency") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "One time", "Weekly", "Every 2 weeks", "Monthly", "Not sure"]));
+  }
+  if (normalized === "experience level") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Beginner", "Intermediate", "Advanced", "Returning after a break"]));
+  }
+  if (normalized === "fitness goal") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Weight loss", "Muscle gain", "Strength", "Mobility", "General fitness", "Sports performance"]));
+  }
+  if (normalized === "diet preference") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "No preference", "Vegetarian", "Vegan", "Halal", "Kosher", "Low carb", "High protein", "Other"]));
+  }
+  if (normalized === "buy or sell") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Buy", "Sell", "Rent", "Invest", "Not sure"]));
+  }
+  if (normalized === "individual/business") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Individual", "Business", "Both"]));
+  }
+  if (normalized === "animal type") {
+    return wrap(selectControl(label, name, requiredAttr, ["", "Dog", "Cat", "Bird", "Rabbit", "Reptile", "Other"]));
+  }
+  if (normalized === "vehicle brand" || normalized === "model" || normalized === "country" || normalized === "preferred city" || normalized === "location" || normalized === "occupation") {
+    return wrap(`<label>${label}<input name="${name}" ${requiredAttr} placeholder="Your answer" /></label>`);
+  }
   if (isYesNoQuestion(normalized)) {
     return wrap(selectControl(label, name, requiredAttr, ["", "Yes", "No", "Not sure"]));
   }
   if (normalized.includes("urgency") || normalized.includes("urgent")) {
     return wrap(selectControl(label, name, requiredAttr, ["", "Low", "Medium", "High", "Emergency"]));
   }
-  if (normalized === "age" || normalized.includes("bedrooms") || normalized.includes("employees") || normalized.includes("height") || normalized.includes("weight") || normalized.includes("mileage") || normalized.includes("year")) {
+  if (normalized === "age" || normalized.includes("bedrooms") || normalized.includes("bathrooms") || normalized.includes("employees") || normalized.includes("height") || normalized.includes("weight") || normalized.includes("mileage") || normalized.includes("year") || normalized.includes("number of rooms") || normalized.includes("workout days") || normalized.includes("property age")) {
     return wrap(`<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter number" /></label>`);
   }
   if (normalized === "budget" || normalized.includes("annual revenue")) {
     return wrap(`<label>${label}<input type="number" name="${name}" ${requiredAttr} min="0" placeholder="Enter amount" /></label>`);
   }
-  if (normalized.includes("preferred date") || normalized.includes("event date") || normalized.includes("deadline") || normalized.includes("court date")) {
+  if (normalized.includes("preferred date") || normalized.includes("date of incident") || normalized.includes("event date") || normalized.includes("deadline") || normalized.includes("court date")) {
     return wrap(`<label>${label}<input type="date" name="${name}" ${requiredAttr} /></label>`);
   }
   if (normalized.includes("preferred time")) {
     return wrap(`<label>${label}<input type="time" name="${name}" ${requiredAttr} /></label>`);
   }
-  if (normalized.includes("upload photo") || normalized.includes("inspiration photo")) {
+  if (normalized.includes("upload photo")) {
     return wrap(`<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="image/*" /></label>`);
   }
   if (normalized.includes("upload video")) {
@@ -1266,24 +1563,51 @@ function isYesNoQuestion(normalized) {
     "have you",
     "is your",
     "upload",
+    "acne",
+    "dry skin",
+    "oily skin",
+    "combination skin",
     "sensitive",
     "allerg",
+    "pregnancy",
     "pregnant",
     "breastfeeding",
     "dyed",
     "bleached",
     "damaged",
     "fever",
+    "smoking",
     "swelling",
     "bleeding",
     "broken",
     "sensitivity",
     "injury",
     "surgery",
+    "planning permission",
+    "power outage",
+    "fuse issue",
+    "new installation",
+    "leak",
+    "blockage",
+    "boiler issue",
+    "deep cleaning",
+    "regular cleaning",
+    "move in/out",
     "pets",
+    "warning lights",
+    "accident",
+    "starting issue",
+    "strange noise",
+    "eating normally",
+    "drinking normally",
     "vaccinated",
-    "financing approved",
-    "vat registered"
+    "financing ready",
+    "documents available",
+    "payroll needed",
+    "bookkeeping needed",
+    "tax return needed",
+    "vat registered",
+    "gym access"
   ];
   return yesNoSignals.some((signal) => normalized.includes(signal)) && !normalized.includes("upload photo") && !normalized.includes("upload video") && !normalized.includes("upload document");
 }
