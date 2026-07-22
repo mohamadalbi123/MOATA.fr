@@ -76,13 +76,13 @@ if (requestForm) {
       window.location.href = "signup.html?next=finish";
       return;
     }
-    saveAssistant(assistant);
+    const savedAssistant = await saveAssistant(assistant);
     downloadJson({
-      filename: `${assistant.id}-assistant-setup.json`,
-      payload: assistant
+      filename: `${savedAssistant.id}-assistant-setup.json`,
+      payload: savedAssistant
     });
     requestNote.textContent = "Assistant setup saved. Opening your dashboard...";
-    window.location.href = `dashboard.html?id=${encodeURIComponent(assistant.id)}`;
+    window.location.href = `dashboard.html?id=${encodeURIComponent(savedAssistant.id)}`;
   });
 }
 
@@ -97,9 +97,9 @@ if (authForm) {
     }
     const pendingAssistant = getPendingAssistant();
     if (pendingAssistant) {
-      saveAssistant(pendingAssistant);
+      const savedAssistant = await saveAssistant(pendingAssistant);
       localStorage.removeItem("moataPendingAssistant");
-      window.location.href = `dashboard.html?id=${encodeURIComponent(pendingAssistant.id)}`;
+      window.location.href = `dashboard.html?id=${encodeURIComponent(savedAssistant.id)}`;
       return;
     }
     window.location.href = "dashboard.html";
@@ -153,7 +153,7 @@ async function protectDashboard() {
     window.location.href = "login.html?next=dashboard";
     return;
   }
-  renderDashboard();
+  await renderDashboard();
 }
 
 async function authenticateUser(data, mode) {
@@ -274,13 +274,44 @@ function createAssistantRecord(data) {
   };
 }
 
-function saveAssistant(assistant) {
-  const assistants = getAssistants().filter((item) => item.id !== assistant.id);
+async function saveAssistant(assistant) {
+  const supabase = await getSupabaseClient();
+  const currentUser = await getCurrentUser();
+  if (supabase && currentUser) {
+    const { data, error } = await supabase
+      .from("assistants")
+      .insert(toAssistantRow(assistant, currentUser.id))
+      .select()
+      .single();
+    if (error) throw error;
+    const savedAssistant = fromAssistantRow(data);
+    saveAssistantLocal(savedAssistant);
+    return savedAssistant;
+  }
+  saveAssistantLocal(assistant);
+  return assistant;
+}
+
+function saveAssistantLocal(assistant) {
+  const assistants = getLocalAssistants().filter((item) => item.id !== assistant.id);
   assistants.unshift(assistant);
   localStorage.setItem("moataAssistants", JSON.stringify(assistants));
 }
 
-function getAssistants() {
+async function getAssistants() {
+  const supabase = await getSupabaseClient();
+  const currentUser = await getCurrentUser();
+  if (supabase && currentUser) {
+    const { data, error } = await supabase
+      .from("assistants")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (!error && data) return data.map(fromAssistantRow);
+  }
+  return getLocalAssistants();
+}
+
+function getLocalAssistants() {
   try {
     return JSON.parse(localStorage.getItem("moataAssistants") || "[]");
   } catch {
@@ -288,15 +319,80 @@ function getAssistants() {
   }
 }
 
-function getSelectedAssistant() {
+function toAssistantRow(assistant, userId) {
+  return {
+    user_id: userId,
+    business_name: assistant.business.name,
+    business_website: assistant.business.website,
+    phone: assistant.business.phone,
+    whatsapp: assistant.business.whatsapp,
+    city: assistant.business.city,
+    location: assistant.business.location,
+    booking_url: assistant.business.bookingUrl,
+    industry: assistant.setup.industry,
+    avatar: assistant.setup.assistantAppearance,
+    question_cards: assistant.setup.questionCards,
+    photo_upload: assistant.setup.photoUpload,
+    launch_style: assistant.setup.launchStyle,
+    customer_free_text: assistant.setup.customerFreeText,
+    services: assistant.setup.services,
+    rules: assistant.setup.rules,
+    status: assistant.status || "Setup received"
+  };
+}
+
+function fromAssistantRow(row) {
+  return {
+    id: row.id,
+    status: row.status || "Setup received",
+    createdAt: row.created_at,
+    business: {
+      name: row.business_name || "My Business",
+      website: row.business_website || "",
+      phone: row.phone || "",
+      whatsapp: row.whatsapp || "",
+      city: row.city || "",
+      location: row.location || "",
+      bookingUrl: row.booking_url || ""
+    },
+    setup: {
+      projectType: "AI Diagnostic Assistant",
+      industry: row.industry || "Other",
+      assistantAppearance: row.avatar || "Female White Outfit",
+      questionCards: row.question_cards || "",
+      photoUpload: row.photo_upload || "",
+      launchStyle: row.launch_style || "",
+      customerFreeText: row.customer_free_text || "",
+      services: row.services || "",
+      rules: row.rules || ""
+    }
+  };
+}
+
+async function getSelectedAssistant() {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
-  const assistants = getAssistants();
+  const publicAssistant = await getPublicAssistant(id);
+  if (publicAssistant) return publicAssistant;
+  const assistants = await getAssistants();
   return assistants.find((assistant) => assistant.id === id) || assistants[0] || null;
 }
 
-function renderDashboard() {
-  const assistant = getSelectedAssistant();
+async function getPublicAssistant(id) {
+  if (!assistantPreviewRoot || !id) return null;
+  const supabase = await getSupabaseClient();
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("assistants")
+    .select("*")
+    .eq("id", id)
+    .single();
+  if (error || !data) return null;
+  return fromAssistantRow(data);
+}
+
+async function renderDashboard() {
+  const assistant = await getSelectedAssistant();
   if (!assistant) {
     dashboardRoot.innerHTML = `
       <section class="dashboard-empty">
@@ -352,8 +448,8 @@ function renderDashboard() {
   bindCopyButtons();
 }
 
-function renderAssistantPreview() {
-  const assistant = getSelectedAssistant();
+async function renderAssistantPreview() {
+  const assistant = await getSelectedAssistant();
   const fallback = {
     id: "demo",
     business: { name: "MOATA Demo", bookingUrl: "" },
