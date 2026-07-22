@@ -83,7 +83,7 @@
           <div class="option-grid">
             <label class="option-card"><input type="radio" name="industry" value="Beauty Salon / Skincare" required /><span>Beauty Salon / Skincare</span></label>
             <label class="option-card"><input type="radio" name="industry" value="Hair Salon" /><span>Hair Salon</span></label>
-            <label class="option-card"><input type="radio" name="industry" value="Nail Salon" /><span>Nail Salon</span></label>
+            <label class="option-card"><input type="radio" name="industry" value="Barber Shop" /><span>Barber Shop</span></label>
             <label class="option-card"><input type="radio" name="industry" value="Dental Clinic" /><span>Dental Clinic</span></label>
             <label class="option-card"><input type="radio" name="industry" value="Medical Clinic" /><span>Medical Clinic</span></label>
             <label class="option-card"><input type="radio" name="industry" value="Physiotherapist" /><span>Physiotherapist</span></label>
@@ -100,9 +100,9 @@
             <label class="option-card"><input type="radio" name="industry" value="Other" /><span>Other</span></label>
           </div>
           <div class="service-examples" id="serviceExamples" aria-live="polite">
-            <article data-industry="Beauty Salon / Skincare"><strong>Example recommendations</strong><span>Facial, Hydrating Facial, Chemical Peel, LED Therapy, Microneedling, Anti-Aging Treatment, Acne Treatment</span></article>
+            <article data-industry="Beauty Salon / Skincare"><strong>Example recommendations</strong><span>Facial, Hydrating Facial, Chemical Peel, LED Therapy, Microneedling, Anti-Aging Treatment, Acne Treatment, Manicure, Pedicure, Nail Repair</span></article>
             <article data-industry="Hair Salon"><strong>Example recommendations</strong><span>Haircut, Coloring, Balayage, Keratin, Hair Repair, Scalp Treatment</span></article>
-            <article data-industry="Nail Salon"><strong>Example recommendations</strong><span>Gel, Acrylic, BIAB, Manicure, Pedicure, Nail Repair</span></article>
+            <article data-industry="Barber Shop"><strong>Example recommendations</strong><span>Men's Haircut, Beard Trim, Fade, Shave, Hair Styling, Grooming Package</span></article>
             <article data-industry="Dental Clinic"><strong>Example recommendations</strong><span>Emergency, Cleaning, Filling, Crown, Root Canal, Implant Consultation, Whitening</span></article>
             <article data-industry="Medical Clinic"><strong>Example recommendations</strong><span>Appropriate doctor or appointment type only. Never diagnose disease.</span></article>
             <article data-industry="Physiotherapist"><strong>Example recommendations</strong><span>Initial Assessment, Sports Rehab, Manual Therapy, Dry Needling, Massage</span></article>
@@ -192,11 +192,16 @@
             <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Color frequency" /><span>Color frequency</span></label>
             <label class="option-card question-card" data-industries="Hair Salon"><input type="checkbox" name="questionCards" value="Chemical treatments" /><span>Chemical treatments?</span></label>
 
-            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Nail service wanted" /><span>Service wanted</span></label>
-            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Natural nails or extensions" /><span>Natural / extensions</span></label>
-            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Bites nails" /><span>Bites nails?</span></label>
-            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Previous gel or acrylic" /><span>Previous gel/acrylic?</span></label>
-            <label class="option-card question-card" data-industries="Nail Salon"><input type="checkbox" name="questionCards" value="Nail condition" /><span>Nail condition</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Nail service wanted" /><span>Nail service wanted</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Natural nails or extensions" /><span>Natural / extensions</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Previous gel or acrylic" /><span>Previous gel/acrylic?</span></label>
+            <label class="option-card question-card" data-industries="Beauty Salon / Skincare"><input type="checkbox" name="questionCards" value="Nail condition" /><span>Nail condition</span></label>
+
+            <label class="option-card question-card" data-industries="Barber Shop"><input type="checkbox" name="questionCards" value="Hair length" /><span>Hair length</span></label>
+            <label class="option-card question-card" data-industries="Barber Shop"><input type="checkbox" name="questionCards" value="Wanted haircut style" /><span>Wanted style</span></label>
+            <label class="option-card question-card" data-industries="Barber Shop"><input type="checkbox" name="questionCards" value="Fade preference" /><span>Fade preference</span></label>
+            <label class="option-card question-card" data-industries="Barber Shop"><input type="checkbox" name="questionCards" value="Beard service needed" /><span>Beard service?</span></label>
+            <label class="option-card question-card" data-industries="Barber Shop"><input type="checkbox" name="questionCards" value="Scalp sensitivity" /><span>Scalp sensitivity?</span></label>
 
             <label class="option-card question-card" data-industries="Dental Clinic"><input type="checkbox" name="questionCards" value="What is bothering you?" /><span>What is bothering you?</span></label>
             <label class="option-card question-card" data-industries="Dental Clinic Physiotherapist Medical Clinic"><input type="checkbox" name="questionCards" value="Pain level" /><span>Pain level</span></label>
