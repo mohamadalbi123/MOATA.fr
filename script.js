@@ -1347,18 +1347,17 @@ async function hydrateBuilderForEdit() {
   const editId = new URLSearchParams(window.location.search).get("edit");
   const urlAssistant = getAssistantFromUrl();
   const cachedAssistant = getCachedEditAssistant(editId);
-  if (!editId && !urlAssistant && !cachedAssistant) return;
   const localAssistant = getLocalAssistants()[0] || null;
-  const immediateAssistant = urlAssistant || cachedAssistant || localAssistant;
+  const shouldUseLocalFallback = Boolean(editId || urlAssistant || cachedAssistant);
+  const immediateAssistant = urlAssistant || cachedAssistant || (shouldUseLocalFallback ? localAssistant : null);
   if (immediateAssistant) {
     fillBuilderForm(immediateAssistant);
     if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
   }
-  if (!editId) return;
   const assistants = await getAssistants();
-  const assistant = assistants.find((item) => item.id === editId) || immediateAssistant || assistants[0];
+  const assistant = (editId ? assistants.find((item) => item.id === editId) : null) || assistants[0] || immediateAssistant;
   if (!assistant) {
-    if (requestNote) requestNote.textContent = "Could not load your saved assistant. Please login again from the dashboard, then click Edit Assistant Setup.";
+    if (editId && requestNote) requestNote.textContent = "Could not load your saved assistant. Please login again from the dashboard, then click Edit Assistant Setup.";
     return;
   }
   fillBuilderForm(assistant);
