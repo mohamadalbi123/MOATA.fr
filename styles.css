@@ -1637,7 +1637,7 @@ textarea {
 
 .dashboard-overview-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -1668,13 +1668,6 @@ textarea {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
-}
-
-.dashboard-overview-strip {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  align-items: center;
 }
 
 .dashboard-single {
@@ -2009,11 +2002,6 @@ textarea {
 
   .dashboard-details-grid {
     grid-template-columns: 1fr;
-  }
-
-  .dashboard-overview-strip {
-    align-items: flex-start;
-    flex-direction: column;
   }
 
   .wizard-progress {

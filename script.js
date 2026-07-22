@@ -534,15 +534,14 @@ async function renderDashboard() {
 
   const publicLink = new URL(`assistant.html?id=${encodeURIComponent(assistant.id)}`, window.location.href).href;
   const embedCode = `<script src="https://www.moata.fr/widget.js" data-assistant="${assistant.id}"></script>`;
-  const view = new URLSearchParams(window.location.search).get("view") || "overview";
+  const view = new URLSearchParams(window.location.search).get("view") || "dashboard";
   const sectionMap = {
-    overview: renderDashboardOverview,
+    dashboard: renderDashboardHome,
     account: renderDashboardAccount,
     assistant: renderDashboardAssistant,
-    delivery: renderDashboardDelivery,
     billing: renderDashboardBilling
   };
-  const activeSection = sectionMap[view] || renderDashboardOverview;
+  const activeSection = sectionMap[view] || renderDashboardHome;
   const dashboardContext = { assistant, currentUser, userName, userEmail, publicLink, embedCode };
 
   dashboardRoot.innerHTML = `
@@ -552,7 +551,6 @@ async function renderDashboard() {
         <h1>${escapeHtml(getDashboardTitle(view, userName || assistant.business.name))}</h1>
         <p>${escapeHtml(getDashboardDescription(view))}</p>
       </div>
-      <a class="button" href="${getDashboardUrl("assistant", assistant.id)}">My Assistant</a>
     </section>
     ${renderDashboardNav(view, assistant.id)}
     ${activeSection(dashboardContext)}
@@ -564,9 +562,8 @@ async function renderDashboard() {
 
 function renderDashboardNav(activeView, assistantId) {
   const navItems = [
-    ["overview", "Overview"],
-    ["assistant", "My AI Agent"],
-    ["delivery", "Public Link & Code"],
+    ["dashboard", "Dashboard"],
+    ["assistant", "My Assistant"],
     ["billing", "Billing"],
     ["account", "Account Settings"]
   ];
@@ -580,21 +577,12 @@ function renderDashboardNav(activeView, assistantId) {
   `;
 }
 
-function renderDashboardOverview({ assistant, userName, userEmail, publicLink }) {
+function renderDashboardHome({ assistant, userName, userEmail }) {
   return `
     <section class="dashboard-overview-grid">
       ${renderDashboardCard("Account Settings", userName || "MOATA Client", userEmail, getDashboardUrl("account", assistant.id))}
       ${renderDashboardCard("Billing", "€39 / month", "Subscription, checkout, and plan details.", getDashboardUrl("billing", assistant.id))}
-      ${renderDashboardCard("My AI Agent", assistant.business.name, "Edit setup, test the agent, copy link, and copy embed code.", getDashboardUrl("assistant", assistant.id))}
-      ${renderDashboardCard("Public Link & Code", "Install or share", "Hosted page, website embed code, and preview link.", getDashboardUrl("delivery", assistant.id))}
-    </section>
-    <section class="dashboard-panel dashboard-overview-strip">
-      <div>
-        <p class="eyebrow">Quick Preview</p>
-        <h2>${escapeHtml(assistant.business.name)} assistant is ready to test.</h2>
-        <p>Open the public page, answer the diagnostic, and confirm that the assistant recommends only services you offer.</p>
-      </div>
-      <a class="button" href="${publicLink}">Open Assistant</a>
+      ${renderDashboardCard("My Assistant", assistant.business.name, "Edit setup, test the assistant, copy link, and copy embed code.", getDashboardUrl("assistant", assistant.id))}
     </section>
   `;
 }
@@ -624,7 +612,7 @@ function renderDashboardAccount({ currentUser, userName, userEmail }) {
         </dl>
         <div class="compact-actions">
           <button class="button" id="passwordResetButton" type="button">Send Password Reset</button>
-          <a class="button button-light" href="${getDashboardUrl("overview")}">Back to Dashboard</a>
+          <a class="button button-light" href="${getDashboardUrl("dashboard")}">Back to Dashboard</a>
         </div>
         <p class="form-note" id="accountNote" aria-live="polite"></p>
       </article>
@@ -639,7 +627,7 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
         <div class="dashboard-assistant-top">
           <img class="dashboard-avatar" src="${getAvatarPath(assistant.setup.assistantAppearance)}" alt="" />
           <div>
-            <p class="eyebrow">My AI Agent</p>
+            <p class="eyebrow">My Assistant</p>
             <h2>${escapeHtml(assistant.business.name)}</h2>
             <p>${escapeHtml(assistant.setup.industry)} · ${escapeHtml(assistant.setup.assistantLanguage || "English")} · ${escapeHtml(assistant.status)}</p>
           </div>
@@ -671,35 +659,8 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
         <code class="dashboard-code">${escapeHtml(embedCode)}</code>
         <div class="compact-actions">
           <a class="button" href="${publicLink}">Test Assistant</a>
-          <a class="button button-light" href="request.html">Edit Agent Setup</a>
+          <a class="button button-light" href="request.html">Edit Assistant Setup</a>
         </div>
-      </article>
-    </section>
-  `;
-}
-
-function renderDashboardDelivery({ publicLink, embedCode }) {
-  return `
-    <section class="dashboard-single">
-      <article class="dashboard-panel dashboard-delivery-card">
-        <p class="eyebrow">Delivery</p>
-        <h2>Public link and embed code</h2>
-        <div class="dashboard-code-row">
-          <div>
-            <strong>Hosted diagnostic page</strong>
-            <p>Use this for WhatsApp, Instagram, QR codes, or businesses without a website.</p>
-          </div>
-          <button class="button button-light copy-button" data-copy="${escapeHtml(publicLink)}" type="button">Copy Link</button>
-        </div>
-        <code class="dashboard-code">${escapeHtml(publicLink)}</code>
-        <div class="dashboard-code-row">
-          <div>
-            <strong>Website embed</strong>
-            <p>Small code for WordPress, Wix, Shopify, Squarespace, or custom websites.</p>
-          </div>
-          <button class="button button-light copy-button" data-copy="${escapeHtml(embedCode)}" type="button">Copy Code</button>
-        </div>
-        <code class="dashboard-code">${escapeHtml(embedCode)}</code>
       </article>
     </section>
   `;
@@ -714,7 +675,7 @@ function renderDashboardBilling() {
         <p>Includes your AI diagnostic assistant, hosted diagnostic page, website embed code, business dashboard, lead management, email notifications, custom branding, updates, and email support.</p>
         <div class="compact-actions">
           <button class="button" id="checkoutButton" type="button">Continue to Checkout</button>
-          <a class="button button-light" href="${getDashboardUrl("overview")}">Back to Dashboard</a>
+          <a class="button button-light" href="${getDashboardUrl("dashboard")}">Back to Dashboard</a>
         </div>
         <p class="form-note" id="checkoutNote" aria-live="polite"></p>
       </article>
@@ -725,26 +686,26 @@ function renderDashboardBilling() {
 function getDashboardUrl(view, assistantId = new URLSearchParams(window.location.search).get("id")) {
   const params = new URLSearchParams();
   if (assistantId) params.set("id", assistantId);
-  if (view && view !== "overview") params.set("view", view);
+  if (view && view !== "dashboard") params.set("view", view);
   const query = params.toString();
   return query ? `dashboard.html?${query}` : "dashboard.html";
 }
 
 function getDashboardTitle(view, fallbackName) {
   const titles = {
+    dashboard: "Dashboard",
     account: "Account Settings",
-    assistant: "My AI Agent",
-    delivery: "Public Link & Code",
+    assistant: "My Assistant",
     billing: "Billing"
   };
-  return titles[view] || fallbackName;
+  return titles[view] || "Dashboard";
 }
 
 function getDashboardDescription(view) {
   const descriptions = {
+    dashboard: "Choose what you want to manage.",
     account: "Manage your profile, email, login method, and password reset.",
-    assistant: "Review your assistant setup, questions, avatar, rules, services, and language.",
-    delivery: "Copy your hosted diagnostic link or website embed code.",
+    assistant: "Review your assistant setup, test it, copy the public link, and copy the website embed code.",
     billing: "Manage the MOATA monthly plan and secure checkout."
   };
   return descriptions[view] || "Choose what you want to manage from your MOATA client portal.";
