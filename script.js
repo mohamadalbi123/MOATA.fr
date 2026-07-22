@@ -6,6 +6,9 @@ const requestEmail = "mobalbi123@gmail.com";
 const storySteps = document.querySelectorAll(".story-step");
 const processStepCards = document.querySelectorAll(".process-steps .step-card");
 const industryInputs = document.querySelectorAll("input[name='industry']");
+const specialtyPanel = document.getElementById("specialtyPanel");
+const specialtyOptions = document.getElementById("specialtyOptions");
+const specialtyTitle = document.getElementById("specialtyTitle");
 const questionCards = document.querySelectorAll(".question-card");
 const serviceExamples = document.querySelectorAll(".service-examples article");
 const wizardSteps = document.querySelectorAll(".wizard-step");
@@ -55,9 +58,13 @@ if (pricingPlanButtons.length) {
 
 if (industryInputs.length && questionCards.length) {
   industryInputs.forEach((input) => {
-    input.addEventListener("change", () => updateQuestionCards(input.value));
+    input.addEventListener("change", () => {
+      updateQuestionCards(input.value);
+      updateSpecialtyOptions(input.value);
+    });
   });
   updateQuestionCards("");
+  updateSpecialtyOptions("");
 }
 
 if (wizardSteps.length) {
@@ -372,8 +379,76 @@ function updateQuestionCards(industry) {
   });
 }
 
+const specialtyLibrary = {
+  "Beauty Salon / Skincare": [
+    "Facials and skincare",
+    "Advanced skin treatments",
+    "Hair removal",
+    "Brows and lashes",
+    "Nails",
+    "Massage and body care",
+    "Makeup",
+    "Full beauty salon"
+  ],
+  "Hair Salon": ["Women hair", "Color and balayage", "Hair repair", "Curly hair", "Extensions", "Scalp care", "Full hair salon"],
+  "Barber Shop": ["Men haircut", "Beard grooming", "Fade specialist", "Shaving", "Men color", "Full barber shop"],
+  "Dental Clinic": ["General dentistry", "Emergency dental", "Cosmetic dentistry", "Implant dentistry", "Orthodontics", "Endodontics", "Periodontics", "Pediatric dentistry", "Oral surgery"],
+  "Medical Clinic": [
+    "General practitioner / Family medicine",
+    "Internal medicine",
+    "Pediatrics",
+    "Dermatology",
+    "Cardiology",
+    "Endocrinology / Diabetes",
+    "Gastroenterology",
+    "Neurology",
+    "Psychiatry",
+    "Obstetrics and gynecology",
+    "Ophthalmology",
+    "Orthopedics",
+    "ENT / Otolaryngology",
+    "Pulmonology",
+    "Rheumatology",
+    "Urology",
+    "Pain medicine",
+    "Sports medicine",
+    "Urgent care",
+    "Other medical specialty"
+  ],
+  Physiotherapist: ["General physiotherapy", "Sports rehab", "Post-surgery rehab", "Back and neck pain", "Manual therapy", "Massage therapy", "Dry needling"],
+  Construction: ["Renovation", "Painting", "Kitchen", "Bathroom", "Flooring", "Roofing", "Masonry", "Landscaping", "Full construction company"],
+  Electrician: ["Residential electrical", "Commercial electrical", "Emergency electrical", "Lighting installation", "Panel and wiring", "Inspection and diagnostic"],
+  Plumber: ["Residential plumbing", "Commercial plumbing", "Emergency plumbing", "Leak repair", "Drain and blockage", "Water heater", "Bathroom plumbing"],
+  "Cleaning Company": ["Home cleaning", "Office cleaning", "Deep cleaning", "Move-in / move-out", "Airbnb cleaning", "Post-construction cleaning"],
+  "Auto Repair": ["Mechanical repair", "Vehicle diagnostic", "Brakes and tires", "Oil and maintenance", "Body repair", "EV / hybrid"],
+  Veterinary: ["General veterinary", "Emergency veterinary", "Vaccination", "Surgery consultation", "Dental care", "Dermatology", "Nutrition"],
+  "Real Estate": ["Residential sales", "Residential rental", "Commercial real estate", "Property management", "Buyer agent", "Seller agent"],
+  Lawyer: ["Family law", "Immigration law", "Employment law", "Business law", "Criminal law", "Real estate law", "Personal injury", "Tax law", "Intellectual property"],
+  Accountant: ["Tax return", "Bookkeeping", "Payroll", "VAT", "Business setup", "Company accounting", "Financial reporting"],
+  "Personal Trainer": ["Weight loss", "Muscle gain", "Strength training", "Posture and mobility", "Online coaching", "Sports performance"]
+};
+
+function updateSpecialtyOptions(industry) {
+  if (!specialtyPanel || !specialtyOptions || !specialtyTitle) return;
+  const options = specialtyLibrary[industry] || [];
+  specialtyOptions.innerHTML = "";
+  if (!options.length) {
+    specialtyPanel.hidden = true;
+    return;
+  }
+  specialtyTitle.textContent = `Choose a more specific ${industry.toLowerCase()} type`;
+  options.forEach((option, index) => {
+    const label = document.createElement("label");
+    label.className = "option-card option-card-compact";
+    label.innerHTML = `<input type="radio" name="industrySpecialty" value="${escapeHtml(option)}" ${index === 0 ? "checked" : ""} /><span>${escapeHtml(option)}</span>`;
+    specialtyOptions.appendChild(label);
+  });
+  specialtyPanel.hidden = false;
+}
+
 function createAssistantRecord(data) {
   const id = slugify(data.businessName || `assistant-${Date.now()}`) || `assistant-${Date.now()}`;
+  const selectedIndustry = data.industrySpecialty ? `${data.industry || "Other"} - ${data.industrySpecialty}` : data.industry || "Other";
   return {
     id,
     publicToken: createPublicToken(),
@@ -390,7 +465,7 @@ function createAssistantRecord(data) {
     },
     setup: {
       projectType: data.projectType || "AI Diagnostic Assistant",
-      industry: data.industry || "Other",
+      industry: selectedIndustry,
       assistantAppearance: data.assistantAppearance || "Female White Outfit",
       questionCards: data.questionCards || "",
       photoUpload: data.photoUpload || "",
