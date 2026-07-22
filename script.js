@@ -15,6 +15,7 @@ const formActions = document.querySelector("#requestForm .form-actions");
 const dashboardRoot = document.getElementById("dashboardRoot");
 const assistantPreviewRoot = document.getElementById("assistantPreviewRoot");
 const authForm = document.getElementById("authForm");
+const authNote = document.getElementById("authNote");
 
 if (storySteps.length) {
   let activeStoryStep = 0;
@@ -65,11 +66,11 @@ if (form) {
 }
 
 if (requestForm) {
-  requestForm.addEventListener("submit", (event) => {
+  requestForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = collectFormData(requestForm);
     const assistant = createAssistantRecord(data);
-    if (!getCurrentUser()) {
+    if (!(await getCurrentUser())) {
       localStorage.setItem("moataPendingAssistant", JSON.stringify(assistant));
       requestNote.textContent = "Create a free account to save your assistant and open your dashboard.";
       window.location.href = "signup.html?next=finish";
@@ -86,14 +87,14 @@ if (requestForm) {
 }
 
 if (authForm) {
-  authForm.addEventListener("submit", (event) => {
+  authForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const data = collectFormData(authForm);
-    localStorage.setItem("moataUser", JSON.stringify({
-      email: data.email,
-      name: data.name || data.email,
-      createdAt: new Date().toISOString()
-    }));
+    const authResult = await authenticateUser(data, authForm.dataset.authMode || "login");
+    if (!authResult.ok) {
+      authNote.textContent = authResult.message;
+      return;
+    }
     const pendingAssistant = getPendingAssistant();
     if (pendingAssistant) {
       saveAssistant(pendingAssistant);
@@ -106,11 +107,7 @@ if (authForm) {
 }
 
 if (dashboardRoot) {
-  if (!getCurrentUser()) {
-    window.location.href = "login.html?next=dashboard";
-  } else {
-    renderDashboard();
-  }
+  protectDashboard();
 }
 
 if (assistantPreviewRoot) {
@@ -130,7 +127,12 @@ function collectFormData(targetForm) {
   return data;
 }
 
-function getCurrentUser() {
+async function getCurrentUser() {
+  const supabase = await getSupabaseClient();
+  if (supabase) {
+    const { data } = await supabase.auth.getUser();
+    return data.user || null;
+  }
   try {
     return JSON.parse(localStorage.getItem("moataUser") || "null");
   } catch (error) {
@@ -144,6 +146,84 @@ function getPendingAssistant() {
   } catch (error) {
     return null;
   }
+}
+
+async function protectDashboard() {
+  if (!(await getCurrentUser())) {
+    window.location.href = "login.html?next=dashboard";
+    return;
+  }
+  renderDashboard();
+}
+
+async function authenticateUser(data, mode) {
+  const supabase = await getSupabaseClient();
+  if (!supabase) {
+    localStorage.setItem("moataUser", JSON.stringify({
+      email: data.email,
+      name: data.name || data.email,
+      createdAt: new Date().toISOString()
+    }));
+    return { ok: true };
+  }
+
+  if (mode === "signup") {
+    const { data: authData, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          name: data.name || ""
+        }
+      }
+    });
+    if (error) return { ok: false, message: error.message };
+    if (!authData.session) {
+      return { ok: false, message: "Account created. Check your email to confirm it, then login to continue." };
+    }
+    return { ok: true };
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: data.email,
+    password: data.password
+  });
+  if (error) return { ok: false, message: error.message };
+  return { ok: true };
+}
+
+async function getSupabaseClient() {
+  if (window.moataSupabaseClient !== undefined) return window.moataSupabaseClient;
+  try {
+    const response = await fetch("/api/config");
+    if (!response.ok) throw new Error("Config unavailable");
+    const config = await response.json();
+    if (!config.supabaseUrl || !config.supabaseAnonKey) {
+      window.moataSupabaseClient = null;
+      return null;
+    }
+    await loadScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js");
+    window.moataSupabaseClient = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey);
+    return window.moataSupabaseClient;
+  } catch (error) {
+    window.moataSupabaseClient = null;
+    return null;
+  }
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existingScript = document.querySelector(`script[src="${src}"]`);
+    if (existingScript) {
+      resolve();
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
 }
 
 function updateQuestionCards(industry) {

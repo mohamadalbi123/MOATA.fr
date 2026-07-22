@@ -18,10 +18,12 @@
         <h1>Login to your MOATA account.</h1>
         <p>Open your dashboard, continue your assistant setup, and access your diagnostic link or embed code.</p>
         <button class="button button-light" type="button" disabled>Continue with Google</button>
-        <form id="authForm">
+        <form id="authForm" data-auth-mode="login">
           <label>Email <input type="email" name="email" required /></label>
+          <label>Password <input type="password" name="password" minlength="6" required /></label>
           <button class="button" type="submit">Open Dashboard</button>
         </form>
+        <p class="form-note" id="authNote" aria-live="polite"></p>
       </section>
     </main>
     <script src="script.js"></script>
