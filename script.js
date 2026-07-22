@@ -16,6 +16,7 @@ const dashboardRoot = document.getElementById("dashboardRoot");
 const assistantPreviewRoot = document.getElementById("assistantPreviewRoot");
 const authForm = document.getElementById("authForm");
 const authNote = document.getElementById("authNote");
+const googleAuthButton = document.getElementById("googleAuthButton");
 
 if (storySteps.length) {
   let activeStoryStep = 0;
@@ -106,6 +107,15 @@ if (authForm) {
   });
 }
 
+if (googleAuthButton) {
+  googleAuthButton.addEventListener("click", async () => {
+    const result = await signInWithGoogle();
+    if (!result.ok) {
+      authNote.textContent = result.message;
+    }
+  });
+}
+
 if (dashboardRoot) {
   protectDashboard();
 }
@@ -153,7 +163,34 @@ async function protectDashboard() {
     window.location.href = "login.html?next=dashboard";
     return;
   }
+  const pendingAssistant = getPendingAssistant();
+  if (pendingAssistant) {
+    const savedAssistant = await saveAssistant(pendingAssistant);
+    localStorage.removeItem("moataPendingAssistant");
+    window.location.href = `dashboard.html?id=${encodeURIComponent(savedAssistant.id)}`;
+    return;
+  }
   await renderDashboard();
+}
+
+async function signInWithGoogle() {
+  const supabase = await getSupabaseClient();
+  if (!supabase) {
+    return {
+      ok: false,
+      message: "Google login is available on the live MOATA site after Supabase is connected."
+    };
+  }
+
+  const redirectTo = new URL("dashboard.html", window.location.href).href;
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo
+    }
+  });
+  if (error) return { ok: false, message: error.message };
+  return { ok: true };
 }
 
 async function authenticateUser(data, mode) {
