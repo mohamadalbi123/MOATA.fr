@@ -391,7 +391,7 @@
 
         <div class="wizard-controls">
           <button class="button button-light" type="button" id="wizardBack">Back</button>
-          <button class="button" type="button" id="wizardNext">Next</button>
+          <button class="button" type="button" id="wizardNext" onclick="if(!this.dataset.bound && window.moataNextWizardStep){window.moataNextWizardStep();}">Next</button>
         </div>
         <p class="wizard-note" id="wizardNote" aria-live="polite" hidden></p>
 

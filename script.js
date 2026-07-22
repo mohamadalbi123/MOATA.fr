@@ -73,19 +73,28 @@ if (industryInputs.length && questionCards.length) {
 
 if (wizardSteps.length) {
   let currentWizardStep = 0;
+  window.moataWizardStep = currentWizardStep;
   showWizardStep(currentWizardStep);
 
   wizardBack?.addEventListener("click", () => {
     currentWizardStep = Math.max(0, currentWizardStep - 1);
+    window.moataWizardStep = currentWizardStep;
     showWizardStep(currentWizardStep);
   });
 
-  wizardNext?.addEventListener("click", () => {
+  window.moataNextWizardStep = () => {
+    currentWizardStep = window.moataWizardStep || currentWizardStep;
     if (!validateWizardStep(wizardSteps[currentWizardStep])) return;
     setWizardMessage("");
     currentWizardStep = Math.min(wizardSteps.length - 1, currentWizardStep + 1);
+    window.moataWizardStep = currentWizardStep;
     showWizardStep(currentWizardStep);
-  });
+  };
+
+  if (wizardNext) {
+    wizardNext.dataset.bound = "true";
+    wizardNext.addEventListener("click", window.moataNextWizardStep);
+  }
 }
 
 if (brandColorPicker && customBrandColor) {
@@ -1477,6 +1486,17 @@ function showWizardStep(index) {
 }
 
 function validateWizardStep(step) {
+  if (step?.dataset.stepTitle === "Business") {
+    const businessName = step.querySelector('input[name="businessName"]');
+    if (!businessName?.value.trim()) {
+      setWizardMessage("Business name is required before you can continue.");
+      businessName?.focus({ preventScroll: true });
+      businessName?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return false;
+    }
+    step.querySelectorAll('input[type="url"]').forEach(normalizeUrlField);
+    return true;
+  }
   const fields = [...step.querySelectorAll("input, select, textarea")].filter((field) => field.type !== "hidden" && !field.disabled);
   const checkedGroups = new Set();
   for (const field of fields) {
