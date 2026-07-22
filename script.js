@@ -689,6 +689,7 @@ async function renderDashboard() {
   };
   const activeSection = sectionMap[view] || renderDashboardHome;
   const dashboardContext = { assistant, currentUser, userName, userEmail, publicLink, embedCode };
+  localStorage.setItem("moataEditAssistant", JSON.stringify(assistant));
 
   dashboardRoot.innerHTML = `
     <section class="dashboard-hero dashboard-hero-compact">
@@ -1312,10 +1313,21 @@ async function hydrateBuilderForEdit() {
   const editId = new URLSearchParams(window.location.search).get("edit");
   if (!editId) return;
   const assistants = await getAssistants();
-  const assistant = assistants.find((item) => item.id === editId) || assistants[0];
+  const cachedAssistant = getCachedEditAssistant(editId);
+  const assistant = assistants.find((item) => item.id === editId) || cachedAssistant || assistants[0];
   if (!assistant) return;
   fillBuilderForm(assistant);
   if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
+}
+
+function getCachedEditAssistant(editId) {
+  try {
+    const cached = JSON.parse(localStorage.getItem("moataEditAssistant") || "null");
+    if (!cached) return null;
+    return !editId || cached.id === editId ? cached : null;
+  } catch {
+    return null;
+  }
 }
 
 function fillBuilderForm(assistant) {
@@ -1351,7 +1363,7 @@ function splitStoredIndustry(industry = "") {
 }
 
 function setFieldValue(name, value = "") {
-  const field = requestForm?.querySelector(`[name="${CSS.escape(name)}"]`);
+  const field = getNamedFields(name)[0];
   if (field) field.value = value || "";
 }
 
@@ -1366,12 +1378,12 @@ function setPhoneField(phone = "") {
 }
 
 function setRadioValue(name, value = "") {
-  const input = requestForm?.querySelector(`input[name="${CSS.escape(name)}"][value="${CSS.escape(value)}"]`);
+  const input = getNamedFields(name).find((field) => field.value === value);
   if (input) input.checked = true;
 }
 
 function setCheckboxValue(name, checked) {
-  const input = requestForm?.querySelector(`input[name="${CSS.escape(name)}"]`);
+  const input = getNamedFields(name)[0];
   if (input) input.checked = checked;
 }
 
@@ -1380,9 +1392,14 @@ function setCheckboxGroup(name, values = "") {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
-  requestForm?.querySelectorAll(`input[name="${CSS.escape(name)}"]`).forEach((input) => {
+  getNamedFields(name).forEach((input) => {
     input.checked = selected.includes(input.value);
   });
+}
+
+function getNamedFields(name) {
+  if (!requestForm) return [];
+  return [...requestForm.querySelectorAll("input, select, textarea")].filter((field) => field.name === name);
 }
 
 function updateAvoidanceSuggestion(industry = "") {
