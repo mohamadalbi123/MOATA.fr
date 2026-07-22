@@ -113,12 +113,19 @@ if (wizardSteps.length) {
 
 if (brandColorPicker && customBrandColor) {
   brandColorPicker.addEventListener("input", () => {
-    customBrandColor.value = brandColorPicker.value;
+    customBrandColor.value = normalizeHexColor(brandColorPicker.value);
   });
   customBrandColor.addEventListener("input", () => {
-    if (isHexColor(customBrandColor.value)) {
-      brandColorPicker.value = customBrandColor.value;
+    const normalizedColor = normalizeHexColor(customBrandColor.value);
+    if (normalizedColor) {
+      brandColorPicker.value = normalizedColor;
     }
+  });
+  customBrandColor.addEventListener("blur", () => {
+    const normalizedColor = normalizeHexColor(customBrandColor.value);
+    if (!normalizedColor) return;
+    customBrandColor.value = normalizedColor;
+    brandColorPicker.value = normalizedColor;
   });
 }
 
@@ -1196,18 +1203,28 @@ function selectControl(label, name, requiredAttr, options) {
 }
 
 function sanitizeColor(color = "#050505") {
-  return /^#[0-9a-fA-F]{6}$/.test(color) ? color : "#050505";
+  return normalizeHexColor(color) || "#050505";
 }
 
 function getSelectedBrandColor(data) {
-  if (isHexColor(data.customBrandColor)) return data.customBrandColor;
-  if (isHexColor(data.brandColorPicker)) return data.brandColorPicker;
-  if (isHexColor(data.brandColor)) return data.brandColor;
+  const customColor = normalizeHexColor(data.customBrandColor);
+  const pickerColor = normalizeHexColor(data.brandColorPicker);
+  const savedColor = normalizeHexColor(data.brandColor);
+  if (customColor) return customColor;
+  if (pickerColor) return pickerColor;
+  if (savedColor) return savedColor;
   return "#050505";
 }
 
 function isHexColor(color = "") {
-  return /^#[0-9a-fA-F]{6}$/.test(String(color).trim());
+  return Boolean(normalizeHexColor(color));
+}
+
+function normalizeHexColor(color = "") {
+  const raw = String(color).trim();
+  if (!raw) return "";
+  const withHash = raw.startsWith("#") ? raw : `#${raw}`;
+  return /^#[0-9a-fA-F]{6}$/.test(withHash) ? withHash.toLowerCase() : "";
 }
 
 function getAssistantIntro(language = "English") {
