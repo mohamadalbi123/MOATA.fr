@@ -1727,11 +1727,21 @@ textarea {
   color: var(--black);
   font-weight: 900;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .google-auth-button:hover {
   border-color: var(--black);
   background: var(--soft);
+}
+
+.google-auth-button img {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .auth-divider {
