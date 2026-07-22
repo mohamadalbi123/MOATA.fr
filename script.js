@@ -23,8 +23,10 @@ const authNote = document.getElementById("authNote");
 const googleAuthButton = document.getElementById("googleAuthButton");
 const brandColorPicker = document.querySelector("input[name='brandColorPicker']");
 const customBrandColor = document.querySelector("input[name='customBrandColor']");
+const rulesField = document.getElementById("rulesField");
 const headerActions = document.querySelector(".header-actions");
 const pricingPlanButtons = document.querySelectorAll("[data-pricing-plan]");
+let rulesWereAutoFilled = false;
 
 updateAuthHeader();
 guardBuilderForExistingAssistant();
@@ -61,6 +63,7 @@ if (industryInputs.length && questionCards.length) {
     input.addEventListener("change", () => {
       updateQuestionCards(input.value);
       updateSpecialtyOptions(input.value);
+      updateAvoidanceSuggestion(input.value);
     });
   });
   updateQuestionCards("");
@@ -92,6 +95,16 @@ if (brandColorPicker && customBrandColor) {
       brandColorPicker.value = customBrandColor.value;
     }
   });
+}
+
+if (rulesField) {
+  rulesField.addEventListener("input", () => {
+    rulesWereAutoFilled = false;
+  });
+}
+
+if (requestForm) {
+  hydrateBuilderForEdit();
 }
 
 if (form) {
@@ -449,6 +462,7 @@ function updateSpecialtyOptions(industry) {
 function createAssistantRecord(data) {
   const id = slugify(data.businessName || `assistant-${Date.now()}`) || `assistant-${Date.now()}`;
   const selectedIndustry = data.industrySpecialty ? `${data.industry || "Other"} - ${data.industrySpecialty}` : data.industry || "Other";
+  const phone = formatPhoneNumber(data.phoneCountryCode, data.phone);
   return {
     id,
     publicToken: createPublicToken(),
@@ -457,8 +471,8 @@ function createAssistantRecord(data) {
     business: {
       name: data.businessName || "My Business",
       website: data.currentWebsite || "",
-      phone: formatPhoneNumber(data.phoneCountryCode, data.phone),
-      whatsapp: formatPhoneNumber(data.whatsappCountryCode, data.whatsapp),
+      phone,
+      whatsapp: data.phoneIsWhatsapp === "Yes" ? phone : "",
       city: data.city || "",
       location: data.location || "",
       bookingUrl: data.bookingUrl || ""
@@ -586,6 +600,8 @@ function fromAssistantRow(row) {
     subscriptionStatus: row.subscription_status || "inactive",
     subscriptionCurrentPeriodEnd: row.subscription_current_period_end || "",
     billingInterval: row.billing_interval || "",
+    stripeCustomerId: row.stripe_customer_id || "",
+    stripeSubscriptionId: row.stripe_subscription_id || "",
     createdAt: row.created_at,
     business: {
       name: row.business_name || "My Business",
@@ -687,6 +703,7 @@ async function renderDashboard() {
   `;
   bindCopyButtons();
   bindCheckoutButton(currentUser);
+  bindBillingPortalButton();
   bindAccountActions(currentUser);
   bindBillingSwitcher();
 }
@@ -803,7 +820,7 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
           </div>
         `}
         <div class="compact-actions">
-          <a class="button button-light" href="request.html">Edit Assistant Setup</a>
+          <a class="button button-light" href="request.html?edit=${encodeURIComponent(assistant.id)}">Edit Assistant Setup</a>
         </div>
       </article>
     </section>
@@ -818,22 +835,40 @@ function isAssistantActive(assistant) {
 }
 
 function renderDashboardBilling({ assistant }) {
+  const isActive = isAssistantActive(assistant);
+  const nextBillingDate = formatBillingDate(assistant.subscriptionCurrentPeriodEnd);
+  const statusLabel = assistant.subscriptionStatus || assistant.status || "inactive";
+  const planLabel = assistant.billingInterval === "yearly" ? "Yearly" : assistant.billingInterval === "monthly" ? "Monthly" : "Not selected";
   return `
     <section class="dashboard-single">
       <article class="dashboard-panel dashboard-billing-card">
         <p class="eyebrow">Billing</p>
-        <h2>Choose billing</h2>
-        <p>Activate your assistant monthly or yearly. The assistant should stop working automatically when the paid period ends.</p>
-        <div class="billing-switcher" role="group" aria-label="Billing period">
-          <label><input type="radio" name="billingInterval" value="monthly" checked /> <span>Monthly</span></label>
-          <label><input type="radio" name="billingInterval" value="yearly" /> <span>Yearly</span></label>
-        </div>
-        <p class="billing-price" id="billingPrice">€39 <span>/ month</span></p>
-        <p class="form-note" id="billingPlanNote">Pay monthly. Cancel before the next billing period.</p>
-        <div class="compact-actions">
-          <button class="button" id="checkoutButton" type="button" data-assistant-id="${escapeHtml(assistant.id)}">Continue to Checkout</button>
-          <a class="button button-light" href="${getDashboardUrl("dashboard")}">Back to Dashboard</a>
-        </div>
+        <h2>${isActive ? "Subscription active" : "Activate billing"}</h2>
+        <p>${isActive ? "Manage the subscription, payment method, invoices, and cancellation securely through Stripe." : "Activate your assistant monthly or yearly. The assistant stops working automatically when the paid period ends."}</p>
+        <dl class="billing-summary">
+          <div><dt>Status</dt><dd><span class="status-pill ${isActive ? "active" : ""}">${escapeHtml(statusLabel)}</span></dd></div>
+          <div><dt>Plan</dt><dd>${escapeHtml(planLabel)}</dd></div>
+          <div><dt>Next billing date</dt><dd>${escapeHtml(nextBillingDate)}</dd></div>
+          <div><dt>Payment method</dt><dd>Managed securely in Stripe. Card number and CVC are never stored in MOATA.</dd></div>
+        </dl>
+        ${isActive ? `
+          <div class="compact-actions">
+            <button class="button" id="billingPortalButton" type="button" data-assistant-id="${escapeHtml(assistant.id)}">Manage Billing</button>
+            <a class="button button-light" href="${getDashboardUrl("dashboard")}">Back to Dashboard</a>
+          </div>
+          <p class="form-note">Use Manage Billing to update card details, view invoices, change payment method, or cancel the subscription.</p>
+        ` : `
+          <div class="billing-switcher" role="group" aria-label="Billing period">
+            <label><input type="radio" name="billingInterval" value="monthly" checked /> <span>Monthly</span></label>
+            <label><input type="radio" name="billingInterval" value="yearly" /> <span>Yearly</span></label>
+          </div>
+          <p class="billing-price" id="billingPrice">€39 <span>/ month</span></p>
+          <p class="form-note" id="billingPlanNote">Pay monthly. Cancel before the next billing period.</p>
+          <div class="compact-actions">
+            <button class="button" id="checkoutButton" type="button" data-assistant-id="${escapeHtml(assistant.id)}">Continue to Checkout</button>
+            <a class="button button-light" href="${getDashboardUrl("dashboard")}">Back to Dashboard</a>
+          </div>
+        `}
         <p class="form-note" id="checkoutNote" aria-live="polite"></p>
       </article>
     </section>
@@ -908,6 +943,7 @@ async function renderAssistantPreview() {
   const recommendation = services[0] || "The right service from this business";
   const avatar = getAvatarPath(data.setup.assistantAppearance);
   const brandColor = sanitizeColor(data.setup.brandColor || "#050505");
+  const whatsappLink = getWhatsAppLink(data.business.whatsapp, data.business.name);
 
   assistantPreviewRoot.innerHTML = `
     <section class="assistant-shell" style="--assistant-accent: ${brandColor}">
@@ -931,7 +967,10 @@ async function renderAssistantPreview() {
         <p class="eyebrow">Recommendation</p>
         <h2 id="assistantRecommendationTitle">${escapeHtml(recommendation)}</h2>
         <p id="assistantRecommendationText">MOATA is preparing the recommendation using the business services and your answers.</p>
-        ${data.business.bookingUrl ? `<a class="button" href="${escapeHtml(data.business.bookingUrl)}">Continue to Booking</a>` : ""}
+        <div class="compact-actions">
+          ${data.business.bookingUrl ? `<a class="button" href="${escapeHtml(data.business.bookingUrl)}">Continue to Booking</a>` : ""}
+          ${whatsappLink ? `<a class="button button-light" href="${escapeHtml(whatsappLink)}">Chat on WhatsApp</a>` : ""}
+        </div>
       </section>
       <button class="assistant-floating-avatar" id="assistantRestart" type="button" aria-label="Restart diagnostic">
         <img src="${avatar}" alt="" />
@@ -1042,7 +1081,7 @@ function renderQuestionControl(question, required = false, number = 1) {
     return wrap(`<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="image/*" /></label>`);
   }
   if (normalized.includes("upload video")) {
-    return wrap(`<label>${label}<input type="file" name="${name}" ${requiredAttr} accept="video/*" /></label>`);
+    return "";
   }
   if (normalized.includes("upload document") || normalized.includes("documents")) {
     return wrap(`<label>${label}<input type="file" name="${name}" ${requiredAttr} /></label>`);
@@ -1151,6 +1190,13 @@ function formatPhoneNumber(countryCode = "", number = "") {
   return `${countryCode} ${cleanNumber}`.trim();
 }
 
+function getWhatsAppLink(phone = "", businessName = "the business") {
+  const digits = String(phone || "").replace(/[^\d]/g, "");
+  if (!digits) return "";
+  const message = encodeURIComponent(`Hello ${businessName}, I completed the diagnostic and would like help choosing the right service.`);
+  return `https://wa.me/${digits}?text=${message}`;
+}
+
 function getAvatarPath(appearance = "") {
   if (appearance.includes("Male") && appearance.includes("Casual")) return "assets/avatar-male-casual.png";
   if (appearance.includes("Male")) return "assets/avatar-male-white.png";
@@ -1203,6 +1249,31 @@ function bindCheckoutButton(currentUser) {
   });
 }
 
+function bindBillingPortalButton() {
+  document.getElementById("billingPortalButton")?.addEventListener("click", async (event) => {
+    const note = document.getElementById("checkoutNote");
+    note.textContent = "Opening secure billing portal...";
+    try {
+      const supabase = await getSupabaseClient();
+      const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: null };
+      const accessToken = sessionData?.session?.access_token || "";
+      const response = await fetch("/api/create-billing-portal-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {})
+        },
+        body: JSON.stringify({ assistantId: event.currentTarget.dataset.assistantId || "" })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.error || "Billing portal failed");
+      window.location.href = payload.url;
+    } catch (error) {
+      note.textContent = "Billing portal is not ready yet. Check the Stripe customer and customer portal settings.";
+    }
+  });
+}
+
 function bindBillingSwitcher() {
   const billingInputs = document.querySelectorAll("input[name='billingInterval']");
   if (!billingInputs.length) return;
@@ -1235,6 +1306,120 @@ function bindAccountActions(currentUser) {
     });
     note.textContent = error ? error.message : "Password reset email sent.";
   });
+}
+
+async function hydrateBuilderForEdit() {
+  const editId = new URLSearchParams(window.location.search).get("edit");
+  if (!editId) return;
+  const assistants = await getAssistants();
+  const assistant = assistants.find((item) => item.id === editId) || assistants[0];
+  if (!assistant) return;
+  fillBuilderForm(assistant);
+  if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
+}
+
+function fillBuilderForm(assistant) {
+  setFieldValue("businessName", assistant.business.name);
+  setFieldValue("currentWebsite", assistant.business.website);
+  setPhoneField(assistant.business.phone);
+  setCheckboxValue("phoneIsWhatsapp", Boolean(assistant.business.whatsapp && assistant.business.whatsapp === assistant.business.phone));
+  setFieldValue("city", assistant.business.city);
+  setFieldValue("location", assistant.business.location);
+  setFieldValue("bookingUrl", assistant.business.bookingUrl);
+  const [baseIndustry, specialty] = splitStoredIndustry(assistant.setup.industry);
+  setRadioValue("industry", baseIndustry);
+  updateQuestionCards(baseIndustry);
+  updateSpecialtyOptions(baseIndustry);
+  updateAvoidanceSuggestion(baseIndustry);
+  if (specialty) setRadioValue("industrySpecialty", specialty);
+  setRadioValue("assistantAppearance", assistant.setup.assistantAppearance);
+  setCheckboxGroup("questionCards", assistant.setup.questionCards);
+  setRadioValue("photoUpload", assistant.setup.photoUpload);
+  setRadioValue("launchStyle", assistant.setup.launchStyle);
+  setRadioValue("assistantLanguage", assistant.setup.assistantLanguage);
+  setRadioValue("customerFreeText", assistant.setup.customerFreeText);
+  setFieldValue("customBrandColor", assistant.setup.brandColor);
+  if (brandColorPicker && isHexColor(assistant.setup.brandColor)) brandColorPicker.value = assistant.setup.brandColor;
+  setFieldValue("offers", assistant.setup.services);
+  setFieldValue("rules", assistant.setup.rules);
+  rulesWereAutoFilled = false;
+}
+
+function splitStoredIndustry(industry = "") {
+  const [base, ...rest] = String(industry).split(" - ");
+  return [base || "Other", rest.join(" - ")];
+}
+
+function setFieldValue(name, value = "") {
+  const field = requestForm?.querySelector(`[name="${CSS.escape(name)}"]`);
+  if (field) field.value = value || "";
+}
+
+function setPhoneField(phone = "") {
+  const match = String(phone).match(/^(\+\d+)\s*(.*)$/);
+  if (match) {
+    setFieldValue("phoneCountryCode", match[1]);
+    setFieldValue("phone", match[2]);
+  } else {
+    setFieldValue("phone", phone);
+  }
+}
+
+function setRadioValue(name, value = "") {
+  const input = requestForm?.querySelector(`input[name="${CSS.escape(name)}"][value="${CSS.escape(value)}"]`);
+  if (input) input.checked = true;
+}
+
+function setCheckboxValue(name, checked) {
+  const input = requestForm?.querySelector(`input[name="${CSS.escape(name)}"]`);
+  if (input) input.checked = checked;
+}
+
+function setCheckboxGroup(name, values = "") {
+  const selected = String(values)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  requestForm?.querySelectorAll(`input[name="${CSS.escape(name)}"]`).forEach((input) => {
+    input.checked = selected.includes(input.value);
+  });
+}
+
+function updateAvoidanceSuggestion(industry = "") {
+  if (!rulesField) return;
+  const suggestion = getDefaultAvoidRules(industry);
+  if (!suggestion) return;
+  if (!rulesField.value.trim() || rulesWereAutoFilled) {
+    rulesField.value = suggestion;
+    rulesWereAutoFilled = true;
+  }
+}
+
+function getDefaultAvoidRules(industry = "") {
+  const normalized = industry.toLowerCase();
+  if (normalized.includes("medical") || normalized.includes("dental") || normalized.includes("veterinary")) {
+    return "Avoid diagnosing, prescribing, naming diseases, promising treatment results, or replacing a qualified professional. Recommend appointment/service type only, and ask urgent cases to contact the clinic directly or emergency services.";
+  }
+  if (normalized.includes("lawyer")) {
+    return "Avoid giving legal conclusions, guaranteeing outcomes, drafting legal advice, or replacing a qualified lawyer. Recommend consultation type only and ask urgent deadlines to contact the office directly.";
+  }
+  if (normalized.includes("accountant")) {
+    return "Avoid giving final tax, accounting, or financial advice. Recommend the right service type only and ask customers to confirm details with the accountant.";
+  }
+  if (normalized.includes("electrician") || normalized.includes("plumber") || normalized.includes("construction") || normalized.includes("auto")) {
+    return "Avoid giving dangerous repair instructions, safety guarantees, or final quotes without inspection. Recommend the right service visit and ask urgent safety risks to contact the business directly.";
+  }
+  if (normalized.includes("beauty") || normalized.includes("hair") || normalized.includes("barber") || normalized.includes("trainer") || normalized.includes("physio")) {
+    return "Avoid promising results, giving medical claims, or recommending services not listed by the business. If unsure, ask the customer to book a consultation.";
+  }
+  return "Avoid recommending services not listed by the business, promising results, or answering outside the business offer. If unsure, ask the customer to contact the business.";
+}
+
+function formatBillingDate(value = "") {
+  if (!value) return "Not available yet";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not available yet";
+  return new Intl.DateTimeFormat("en", { year: "numeric", month: "long", day: "numeric" }).format(date);
 }
 
 function getUserDisplayName(user) {

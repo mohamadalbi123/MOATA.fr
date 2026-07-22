@@ -135,6 +135,7 @@ async function getAiRecommendation(assistant, answers) {
             "For medical, dental, veterinary, legal, accounting, and financial use cases: recommend the right appointment category only. Do not name a disease, legal conclusion, tax conclusion, treatment plan, medication, dosage, or guaranteed outcome.",
             "For beauty, skincare, hair, and wellness, do not promise results and do not make medical claims. Explain the fit using the customer's concern, preferences, and selected answers.",
             "If the customer needs urgent help, says there is danger, severe pain, emergency damage, or health/safety risk, recommend contacting the business/emergency service directly.",
+            "If the business provides a bookingUrl, make the next step booking-focused. If the business provides WhatsApp, it is acceptable to suggest contacting the business by WhatsApp for clarification.",
             "Answer in the assistantLanguage provided by the business.",
             "Never say 'as an AI'.",
             "Return concise customer-facing text with clear labels: Recommended service, Why this fits, Important note, Next step."
@@ -152,6 +153,7 @@ async function getAiRecommendation(assistant, answers) {
               name: assistant.business_name,
               industry: assistant.industry,
               website: assistant.business_website,
+              whatsapp: assistant.whatsapp,
               city: assistant.city,
               location: assistant.location,
               bookingUrl: assistant.booking_url

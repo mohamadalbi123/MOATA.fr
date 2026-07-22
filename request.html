@@ -38,7 +38,7 @@
           <h2>Business Information</h2>
           <div class="form-grid">
             <label>Business name <input name="businessName" required /></label>
-            <label>Business website <input name="currentWebsite" placeholder="https://..." /></label>
+            <label>Business website <input type="url" name="currentWebsite" placeholder="https://..." pattern="https?://.+" title="Enter a full URL starting with http:// or https://" /></label>
             <label>Phone number
               <span class="phone-field">
                 <select class="phone-code" name="phoneCountryCode" aria-label="Phone country code">
@@ -55,25 +55,10 @@
                 <input class="phone-number" name="phone" inputmode="tel" autocomplete="tel" placeholder="6 12 34 56 78" />
               </span>
             </label>
-            <label>WhatsApp
-              <span class="phone-field">
-                <select class="phone-code" name="whatsappCountryCode" aria-label="WhatsApp country code">
-                  <option value="+33">🇫🇷 +33</option>
-                  <option value="+1">🇺🇸 +1</option>
-                  <option value="+44">🇬🇧 +44</option>
-                  <option value="+961">🇱🇧 +961</option>
-                  <option value="+971">🇦🇪 +971</option>
-                  <option value="+212">🇲🇦 +212</option>
-                  <option value="+49">🇩🇪 +49</option>
-                  <option value="+34">🇪🇸 +34</option>
-                  <option value="+39">🇮🇹 +39</option>
-                </select>
-                <input class="phone-number" name="whatsapp" inputmode="tel" autocomplete="tel" placeholder="Optional" />
-              </span>
-            </label>
+            <label class="toggle-field"><input type="checkbox" name="phoneIsWhatsapp" value="Yes" /> <span>This number is also WhatsApp</span></label>
             <label>City <input name="city" placeholder="City" /></label>
             <label>Exact location or service area <input name="location" placeholder="Address, city area, or service radius" /></label>
-            <label>Booking URL <input name="bookingUrl" placeholder="https://..." /></label>
+            <label>Booking URL <input type="url" name="bookingUrl" placeholder="https://..." pattern="https?://.+" title="Enter a full URL starting with http:// or https://" /></label>
           </div>
         </section>
 
@@ -128,32 +113,28 @@
         <section class="wizard-step avatar-step" data-step-title="Avatar">
           <h2>Choose The Assistant Avatar</h2>
           <div class="avatar-grid">
-            <label class="avatar-card">
+            <label class="avatar-card avatar-card-image-only" aria-label="Avatar 1">
               <input type="radio" name="assistantAppearance" value="Female White Outfit" required />
               <img src="assets/avatar-female-white.png" alt="" />
-              <strong>Female</strong>
             </label>
-            <label class="avatar-card">
+            <label class="avatar-card avatar-card-image-only" aria-label="Avatar 2">
               <input type="radio" name="assistantAppearance" value="Male White Outfit" />
               <img src="assets/avatar-male-white.png" alt="" />
-              <strong>Male</strong>
             </label>
-            <label class="avatar-card">
+            <label class="avatar-card avatar-card-image-only" aria-label="Avatar 3">
               <input type="radio" name="assistantAppearance" value="Female Casual Outfit" />
               <img src="assets/avatar-female-casual.png" alt="" />
-              <strong>Female</strong>
             </label>
-            <label class="avatar-card">
+            <label class="avatar-card avatar-card-image-only" aria-label="Avatar 4">
               <input type="radio" name="assistantAppearance" value="Male Casual Outfit" />
               <img src="assets/avatar-male-casual.png" alt="" />
-              <strong>Male</strong>
             </label>
           </div>
         </section>
 
         <section class="wizard-step" data-step-title="Questions">
           <h2>What information do you need before offering a service?</h2>
-          <p class="field-help">Choose the questions your assistant should ask. MOATA shows precise options based on the industry selected in the previous step, plus common questions every business can use.</p>
+          <p class="field-help">Choose the questions your assistant should ask. Name, email, phone, and address are optional lead fields: select them only when the business needs them for follow-up or service-area checks.</p>
           <div class="option-grid question-grid" id="questionCards">
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Name" /><span>Name</span></label>
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Email" /><span>Email</span></label>
@@ -172,7 +153,6 @@
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Preferred appointment date" /><span>Preferred date</span></label>
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Preferred time" /><span>Preferred time</span></label>
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Upload Photo" /><span>Upload photo</span></label>
-            <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Upload Video" /><span>Upload video</span></label>
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Upload Document" /><span>Upload document</span></label>
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Preferred contact method" /><span>Contact method</span></label>
             <label class="option-card question-card universal"><input type="checkbox" name="questionCards" value="Previous customer?" /><span>Previous customer?</span></label>
@@ -371,19 +351,10 @@
           <div class="setup-group">
             <h3>Choose the assistant color</h3>
             <p class="field-help">This color appears on the hosted diagnostic link and widget so the assistant feels closer to the business brand.</p>
-            <div class="color-grid">
-              <label class="color-card"><input type="radio" name="brandColor" value="#050505" checked /><span style="--swatch: #050505"></span><strong>Black</strong></label>
-              <label class="color-card"><input type="radio" name="brandColor" value="#7a1024" /><span style="--swatch: #7a1024"></span><strong>Burgundy</strong></label>
-              <label class="color-card"><input type="radio" name="brandColor" value="#116149" /><span style="--swatch: #116149"></span><strong>Emerald</strong></label>
-              <label class="color-card"><input type="radio" name="brandColor" value="#1d4e89" /><span style="--swatch: #1d4e89"></span><strong>Blue</strong></label>
-              <label class="color-card"><input type="radio" name="brandColor" value="#6d4c2f" /><span style="--swatch: #6d4c2f"></span><strong>Warm Neutral</strong></label>
-            </div>
-            <div class="custom-color-field">
-              <label>Use exact brand color
-                <span class="color-input-row">
-                  <input class="brand-color-picker" type="color" name="brandColorPicker" value="#050505" aria-label="Pick custom brand color" />
-                  <input name="customBrandColor" placeholder="#050505" pattern="#[0-9a-fA-F]{6}" maxlength="7" />
-                </span>
+            <div class="brand-color-panel">
+              <input class="brand-color-picker brand-color-orb" type="color" name="brandColorPicker" value="#050505" aria-label="Pick assistant brand color" />
+              <label>Brand color code
+                <input name="customBrandColor" value="#050505" placeholder="#050505" pattern="#[0-9a-fA-F]{6}" maxlength="7" />
               </label>
             </div>
           </div>
@@ -413,8 +384,9 @@
 
         <section class="wizard-step" data-step-title="Services">
           <h2>Services</h2>
-          <label>Paste your service or product list <textarea name="offers" placeholder="Service name, description, price, duration, booking link if different..."></textarea></label>
-          <label>Anything the assistant must avoid? <textarea name="rules" placeholder="Examples: avoid medical advice, avoid promising results, avoid recommending unavailable services, avoid discussing prices if they change, ask the customer to contact us if unsure..."></textarea></label>
+          <p class="field-help">Paste the service list from the website, booking system, brochure, or menu. One service per line works best: name, short description, price, duration, and booking link if different.</p>
+          <label>Paste your service or product list <textarea name="offers" placeholder="Hydrating Facial - for dry or tired skin - 60 minutes - €75&#10;Acne Treatment - for breakouts and congestion - 45 minutes - €65&#10;LED Therapy - add-on treatment - 20 minutes - €30"></textarea></label>
+          <label>Anything the assistant must avoid? <textarea name="rules" id="rulesField" placeholder="MOATA will suggest safety rules based on your industry. Add anything else the assistant must avoid here."></textarea></label>
         </section>
 
         <div class="wizard-controls">
