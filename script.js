@@ -14,6 +14,7 @@ const serviceExamples = document.querySelectorAll(".service-examples article");
 const wizardSteps = document.querySelectorAll(".wizard-step");
 const wizardProgress = document.querySelectorAll(".wizard-progress span");
 const wizardBack = document.getElementById("wizardBack");
+const wizardSave = document.getElementById("wizardSave");
 const wizardNext = document.getElementById("wizardNext");
 const wizardNote = document.getElementById("wizardNote");
 const formActions = document.querySelector("#requestForm .form-actions");
@@ -86,10 +87,15 @@ if (wizardSteps.length) {
     currentWizardStep = window.moataWizardStep || currentWizardStep;
     if (!validateWizardStep(wizardSteps[currentWizardStep])) return;
     setWizardMessage("");
+    saveBuilderDraft("Draft saved. Moving to the next step.");
     currentWizardStep = Math.min(wizardSteps.length - 1, currentWizardStep + 1);
     window.moataWizardStep = currentWizardStep;
     showWizardStep(currentWizardStep);
   };
+
+  wizardSave?.addEventListener("click", () => {
+    saveBuilderDraft("Draft saved. You can come back later.");
+  });
 
   if (wizardNext) {
     wizardNext.dataset.bound = "true";
@@ -124,6 +130,7 @@ if (rulesField) {
 
 if (requestForm) {
   requestForm.noValidate = true;
+  restoreBuilderDraft();
   hydrateBuilderForEdit();
 }
 
@@ -155,6 +162,7 @@ if (requestForm) {
       return;
     }
     const savedAssistant = await saveAssistant(assistant);
+    localStorage.removeItem("moataBuilderDraft");
     requestNote.textContent = "Assistant setup saved. Opening your dashboard...";
     window.location.href = `dashboard.html?id=${encodeURIComponent(savedAssistant.id)}`;
   });
@@ -209,6 +217,29 @@ function collectFormData(targetForm) {
     }
   }
   return data;
+}
+
+function saveBuilderDraft(message = "Draft saved.") {
+  if (!requestForm) return;
+  localStorage.setItem("moataBuilderDraft", JSON.stringify({
+    savedAt: new Date().toISOString(),
+    data: collectFormData(requestForm)
+  }));
+  if (requestNote) requestNote.textContent = message;
+}
+
+function restoreBuilderDraft() {
+  if (!requestForm) return;
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("edit") || params.get("data")) return;
+  try {
+    const draft = JSON.parse(localStorage.getItem("moataBuilderDraft") || "null");
+    if (!draft?.data) return;
+    fillRawFormData(draft.data);
+    if (requestNote) requestNote.textContent = "Draft restored. Continue your assistant setup.";
+  } catch {
+    localStorage.removeItem("moataBuilderDraft");
+  }
 }
 
 async function getCurrentUser() {
@@ -1417,6 +1448,38 @@ function fillBuilderForm(assistant) {
   rulesWereAutoFilled = false;
 }
 
+function fillRawFormData(data = {}) {
+  Object.entries(data).forEach(([name, value]) => {
+    const fields = getNamedFields(name);
+    if (!fields.length) return;
+    fields.forEach((field) => {
+      if (field.type === "radio") {
+        field.checked = field.value === value;
+        return;
+      }
+      if (field.type === "checkbox") {
+        const values = String(value)
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean);
+        field.checked = values.includes(field.value);
+        return;
+      }
+      field.value = value || "";
+    });
+  });
+
+  const selectedIndustry = getNamedFields("industry").find((field) => field.checked)?.value || "";
+  if (selectedIndustry) {
+    updateQuestionCards(selectedIndustry);
+    updateSpecialtyOptions(selectedIndustry);
+    updateAvoidanceSuggestion(selectedIndustry);
+  }
+
+  const colorValue = data.customBrandColor || data.brandColorPicker;
+  if (brandColorPicker && isHexColor(colorValue)) brandColorPicker.value = colorValue;
+}
+
 function splitStoredIndustry(industry = "") {
   const [base, ...rest] = String(industry).split(" - ");
   return [base || "Other", rest.join(" - ")];
@@ -1524,6 +1587,7 @@ function showWizardStep(index) {
   });
 
   if (wizardBack) wizardBack.disabled = index === 0;
+  if (wizardSave) wizardSave.hidden = index === wizardSteps.length - 1;
   if (wizardNext) {
     wizardNext.hidden = index === wizardSteps.length - 1;
     wizardNext.textContent = "Next";

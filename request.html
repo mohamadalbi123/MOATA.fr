@@ -391,13 +391,13 @@
 
         <div class="wizard-controls">
           <button class="button button-light" type="button" id="wizardBack">Back</button>
+          <button class="button button-light" type="button" id="wizardSave">Save</button>
           <button class="button" type="button" id="wizardNext" onclick="if(!this.dataset.bound && window.moataNextWizardStep){window.moataNextWizardStep();}">Next</button>
         </div>
         <p class="wizard-note" id="wizardNote" aria-live="polite" hidden></p>
 
         <div class="form-actions" hidden>
-          <button class="button" type="submit">Save Assistant</button>
-          <button class="button button-light" type="submit">Next: Dashboard</button>
+          <button class="button" type="submit">Save</button>
         </div>
         <p class="form-note">You can build the setup first. To save the assistant, open the dashboard, and continue to checkout, you will create a MOATA account at the final step.</p>
         <p class="form-note" id="requestNote" aria-live="polite"></p>
@@ -410,9 +410,12 @@
         const steps = [...document.querySelectorAll(".wizard-step")];
         const progress = [...document.querySelectorAll(".wizard-progress span")];
         const back = document.getElementById("wizardBack");
+        const save = document.getElementById("wizardSave");
         const next = document.getElementById("wizardNext");
+        const form = document.getElementById("requestForm");
         const actions = document.querySelector("#requestForm .form-actions");
         const note = document.getElementById("wizardNote");
+        const requestNote = document.getElementById("requestNote");
         if (!steps.length || !next || next.dataset.inlineWizard === "true") return;
         next.dataset.inlineWizard = "true";
         let index = Math.max(0, steps.findIndex((step) => step.classList.contains("active")));
@@ -422,6 +425,7 @@
           const title = steps[index]?.dataset.stepTitle || "";
           progress.forEach((item) => item.classList.toggle("active", item.textContent.trim() === title));
           if (back) back.disabled = index === 0;
+          if (save) save.hidden = index === steps.length - 1;
           next.hidden = index === steps.length - 1;
           if (actions) actions.hidden = index !== steps.length - 1;
           if (note) {
@@ -464,13 +468,34 @@
           return true;
         };
 
+        const saveDraft = (text = "Draft saved.") => {
+          if (!form) return;
+          const data = {};
+          new FormData(form).forEach((value, key) => {
+            const cleanValue = value instanceof File ? value.name : value;
+            data[key] = data[key] ? `${data[key]}, ${cleanValue}` : cleanValue;
+          });
+          localStorage.setItem("moataBuilderDraft", JSON.stringify({
+            savedAt: new Date().toISOString(),
+            data
+          }));
+          if (requestNote) requestNote.textContent = text;
+        };
+
         next.addEventListener("click", (event) => {
           event.preventDefault();
           event.stopImmediatePropagation();
           if (!valid()) return;
+          saveDraft("Draft saved. Moving to the next step.");
           index = Math.min(index + 1, steps.length - 1);
           window.moataWizardStep = index;
           show();
+        }, true);
+
+        save?.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          saveDraft("Draft saved. You can come back later.");
         }, true);
 
         back?.addEventListener("click", (event) => {
