@@ -1475,12 +1475,20 @@ function showWizardStep(index) {
 function validateWizardStep(step) {
   const fields = [...step.querySelectorAll("input, select, textarea")];
   for (const field of fields) {
+    normalizeUrlField(field);
     if (!field.checkValidity()) {
       field.reportValidity();
       return false;
     }
   }
   return true;
+}
+
+function normalizeUrlField(field) {
+  if (field.type !== "url") return;
+  const value = field.value.trim();
+  if (!value || /^https?:\/\//i.test(value)) return;
+  field.value = `https://${value}`;
 }
 
 function downloadJson({ filename, payload }) {
