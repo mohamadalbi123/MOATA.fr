@@ -154,8 +154,16 @@ function collectFormData(targetForm) {
 async function getCurrentUser() {
   const supabase = await getSupabaseClient();
   if (supabase) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      cacheCurrentUser(sessionData.session.user);
+      return sessionData.session.user;
+    }
     const { data } = await supabase.auth.getUser();
-    return data.user || null;
+    if (data?.user) {
+      cacheCurrentUser(data.user);
+      return data.user;
+    }
   }
   try {
     return JSON.parse(localStorage.getItem("moataUser") || "null");
@@ -232,15 +240,27 @@ async function authenticateUser(data, mode) {
     if (!authData.session) {
       return { ok: false, message: "Account created. Check your email to confirm it, then login to continue." };
     }
+    cacheCurrentUser(authData.session.user);
     return { ok: true };
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email: data.email,
     password: data.password
   });
   if (error) return { ok: false, message: error.message };
+  cacheCurrentUser(authData.user);
   return { ok: true };
+}
+
+function cacheCurrentUser(user) {
+  if (!user) return;
+  localStorage.setItem("moataUser", JSON.stringify({
+    id: user.id,
+    email: user.email,
+    user_metadata: user.user_metadata || {},
+    app_metadata: user.app_metadata || {}
+  }));
 }
 
 async function getSupabaseClient() {
@@ -281,10 +301,9 @@ async function updateAuthHeader() {
   if (!headerActions) return;
   const currentUser = await getCurrentUser();
   if (!currentUser) return;
-  const userName = getUserDisplayName(currentUser) || "Account";
+  const dashboardLink = dashboardRoot ? "" : `<a class="text-link" href="dashboard.html">Dashboard</a>`;
   headerActions.innerHTML = `
-    <a class="text-link" href="dashboard.html">Dashboard</a>
-    <a class="text-link" href="dashboard.html?view=account">${escapeHtml(userName)}</a>
+    ${dashboardLink}
     <button class="button button-light header-logout" type="button">Logout</button>
   `;
   headerActions.querySelector(".header-logout")?.addEventListener("click", signOutUser);
@@ -546,7 +565,7 @@ async function renderDashboard() {
 function renderDashboardNav(activeView, assistantId) {
   const navItems = [
     ["overview", "Overview"],
-    ["assistant", "My AI Assistant"],
+    ["assistant", "My AI Agent"],
     ["delivery", "Public Link & Code"],
     ["billing", "Billing"],
     ["account", "Account Settings"]
@@ -564,10 +583,10 @@ function renderDashboardNav(activeView, assistantId) {
 function renderDashboardOverview({ assistant, userName, userEmail, publicLink }) {
   return `
     <section class="dashboard-overview-grid">
-      ${renderDashboardCard("My AI Assistant", assistant.business.name, `${assistant.setup.industry} · ${assistant.status}`, getDashboardUrl("assistant", assistant.id))}
-      ${renderDashboardCard("Public Link & Code", "Install or share", "Hosted page, website embed code, and preview link.", getDashboardUrl("delivery", assistant.id))}
-      ${renderDashboardCard("Billing", "€39 / month", "Subscription, checkout, and plan details.", getDashboardUrl("billing", assistant.id))}
       ${renderDashboardCard("Account Settings", userName || "MOATA Client", userEmail, getDashboardUrl("account", assistant.id))}
+      ${renderDashboardCard("Billing", "€39 / month", "Subscription, checkout, and plan details.", getDashboardUrl("billing", assistant.id))}
+      ${renderDashboardCard("My AI Agent", assistant.business.name, "Edit setup, test the agent, copy link, and copy embed code.", getDashboardUrl("assistant", assistant.id))}
+      ${renderDashboardCard("Public Link & Code", "Install or share", "Hosted page, website embed code, and preview link.", getDashboardUrl("delivery", assistant.id))}
     </section>
     <section class="dashboard-panel dashboard-overview-strip">
       <div>
@@ -613,14 +632,14 @@ function renderDashboardAccount({ currentUser, userName, userEmail }) {
   `;
 }
 
-function renderDashboardAssistant({ assistant, publicLink }) {
+function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
   return `
     <section class="dashboard-single">
       <article class="dashboard-panel">
         <div class="dashboard-assistant-top">
           <img class="dashboard-avatar" src="${getAvatarPath(assistant.setup.assistantAppearance)}" alt="" />
           <div>
-            <p class="eyebrow">My AI Assistant</p>
+            <p class="eyebrow">My AI Agent</p>
             <h2>${escapeHtml(assistant.business.name)}</h2>
             <p>${escapeHtml(assistant.setup.industry)} · ${escapeHtml(assistant.setup.assistantLanguage || "English")} · ${escapeHtml(assistant.status)}</p>
           </div>
@@ -634,9 +653,25 @@ function renderDashboardAssistant({ assistant, publicLink }) {
           <div><dt>Services</dt><dd>${escapeHtml(assistant.setup.services || "-")}</dd></div>
           <div><dt>Rules to avoid</dt><dd>${escapeHtml(assistant.setup.rules || "-")}</dd></div>
         </dl>
+        <div class="dashboard-code-row">
+          <div>
+            <strong>Public link</strong>
+            <p>Send this link directly to customers or use it as a QR code.</p>
+          </div>
+          <button class="button button-light copy-button" data-copy="${escapeHtml(publicLink)}" type="button">Copy Link</button>
+        </div>
+        <code class="dashboard-code">${escapeHtml(publicLink)}</code>
+        <div class="dashboard-code-row">
+          <div>
+            <strong>Embed code</strong>
+            <p>Paste this on the business website to open the diagnostic.</p>
+          </div>
+          <button class="button button-light copy-button" data-copy="${escapeHtml(embedCode)}" type="button">Copy Code</button>
+        </div>
+        <code class="dashboard-code">${escapeHtml(embedCode)}</code>
         <div class="compact-actions">
           <a class="button" href="${publicLink}">Test Assistant</a>
-          <a class="button button-light" href="request.html">Update Assistant Setup</a>
+          <a class="button button-light" href="request.html">Edit Agent Setup</a>
         </div>
       </article>
     </section>
@@ -698,7 +733,7 @@ function getDashboardUrl(view, assistantId = new URLSearchParams(window.location
 function getDashboardTitle(view, fallbackName) {
   const titles = {
     account: "Account Settings",
-    assistant: "My AI Assistant",
+    assistant: "My AI Agent",
     delivery: "Public Link & Code",
     billing: "Billing"
   };
