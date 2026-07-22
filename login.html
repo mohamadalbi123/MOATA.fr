@@ -10,20 +10,21 @@
     <header class="site-header">
       <a class="brand" href="index.html"><img class="brand-logo" src="assets/moata-logo.svg" alt="" /><span><strong>MOATA</strong><small>Management of Automated Tasks</small></span></a>
       <nav class="main-nav"><a href="services.html">Platform</a><a href="index.html#pricing">Pricing</a><a href="lazoya-example.html">Use Case</a><a href="process.html">Process</a></nav>
-      <div class="header-actions"><a class="text-link" href="signup.html">Sign Up</a><a class="button button-light" href="request.html">Build My Assistant</a></div>
+      <div class="header-actions"></div>
     </header>
     <main class="auth-main">
-      <section class="auth-card">
+      <section class="auth-card minimalist-auth-card">
         <p class="eyebrow">Login</p>
-        <h1>Login to your MOATA account.</h1>
-        <p>Open your dashboard, continue your assistant setup, and access your diagnostic link or embed code.</p>
-        <button class="button button-light" type="button" id="googleAuthButton">Continue with Google</button>
+        <h1>Welcome back.</h1>
+        <p>Open your assistant dashboard.</p>
+        <button class="google-auth-button" type="button" id="googleAuthButton">Continue with Google</button>
         <p class="auth-divider">or use email</p>
         <form id="authForm" data-auth-mode="login">
           <label>Email <input type="email" name="email" required /></label>
           <label>Password <input type="password" name="password" minlength="6" required /></label>
           <button class="button" type="submit">Open Dashboard</button>
         </form>
+        <p class="auth-switch">New to MOATA? <a href="signup.html">Create an account</a></p>
         <p class="form-note" id="authNote" aria-live="polite"></p>
       </section>
     </main>

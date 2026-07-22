@@ -204,7 +204,7 @@ async function signInWithGoogle() {
     };
   }
 
-  const redirectTo = new URL("dashboard.html", window.location.href).href;
+  const redirectTo = getAuthRedirectUrl();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
@@ -213,6 +213,13 @@ async function signInWithGoogle() {
   });
   if (error) return { ok: false, message: error.message };
   return { ok: true };
+}
+
+function getAuthRedirectUrl() {
+  const isLocalFile = window.location.protocol === "file:";
+  const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+  if (isLocalFile || isLocalHost) return "https://www.moata.fr/dashboard.html";
+  return new URL("dashboard.html", window.location.href).href;
 }
 
 async function authenticateUser(data, mode) {
@@ -266,7 +273,8 @@ function cacheCurrentUser(user) {
 async function getSupabaseClient() {
   if (window.moataSupabaseClient !== undefined) return window.moataSupabaseClient;
   try {
-    const response = await fetch("/api/config");
+    const configUrl = window.location.protocol === "file:" ? "https://www.moata.fr/api/config" : "/api/config";
+    const response = await fetch(configUrl);
     if (!response.ok) throw new Error("Config unavailable");
     const config = await response.json();
     if (!config.supabaseUrl || !config.supabaseAnonKey) {
