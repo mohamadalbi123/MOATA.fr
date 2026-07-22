@@ -55,13 +55,21 @@ async function getAssistant(id) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!supabaseUrl || !supabaseAnonKey) throw new Error("Supabase environment variables are missing");
 
-  const url = `${supabaseUrl}/rest/v1/assistants?id=eq.${encodeURIComponent(id)}&select=*`;
-  const response = await fetch(url, {
+  const publicTokenQuery = `or=(public_token.eq.${encodeURIComponent(id)},and(public_token.is.null,id.eq.${encodeURIComponent(id)}))`;
+  let response = await fetch(`${supabaseUrl}/rest/v1/assistants?${publicTokenQuery}&select=*`, {
     headers: {
       apikey: supabaseAnonKey,
       Authorization: `Bearer ${supabaseAnonKey}`
     }
   });
+  if (!response.ok) {
+    response = await fetch(`${supabaseUrl}/rest/v1/assistants?id=eq.${encodeURIComponent(id)}&select=*`, {
+      headers: {
+        apikey: supabaseAnonKey,
+        Authorization: `Bearer ${supabaseAnonKey}`
+      }
+    });
+  }
   if (!response.ok) throw new Error("Could not read assistant setup");
   const rows = await response.json();
   return rows[0] || null;

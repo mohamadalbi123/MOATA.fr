@@ -356,6 +356,7 @@ function createAssistantRecord(data) {
   const id = slugify(data.businessName || `assistant-${Date.now()}`) || `assistant-${Date.now()}`;
   return {
     id,
+    publicToken: createPublicToken(),
     status: "Setup received",
     createdAt: new Date().toISOString(),
     business: {
@@ -395,6 +396,7 @@ async function saveAssistant(assistant) {
       .limit(1);
     const existingId = existingRows?.[0]?.id || null;
     if (existingId) assistant.id = existingId;
+    assistant.publicToken = createPublicToken();
     let insertRow = toAssistantRow(assistant, currentUser.id);
     let query = existingId
       ? supabase.from("assistants").update(insertRow).eq("id", existingId)
@@ -403,6 +405,15 @@ async function saveAssistant(assistant) {
     if (error && (error.message?.includes("brand_color") || error.message?.includes("assistant_language"))) {
       delete insertRow.brand_color;
       delete insertRow.assistant_language;
+      const retryQuery = existingId
+        ? supabase.from("assistants").update(insertRow).eq("id", existingId)
+        : supabase.from("assistants").insert(insertRow);
+      const retry = await retryQuery.select().single();
+      data = retry.data;
+      error = retry.error;
+    }
+    if (error && error.message?.includes("public_token")) {
+      delete insertRow.public_token;
       const retryQuery = existingId
         ? supabase.from("assistants").update(insertRow).eq("id", existingId)
         : supabase.from("assistants").insert(insertRow);
@@ -421,7 +432,7 @@ async function saveAssistant(assistant) {
 
 function saveAssistantLocal(assistant) {
   const existing = getLocalAssistants()[0];
-  const assistantToSave = existing ? { ...assistant, id: existing.id } : assistant;
+  const assistantToSave = existing ? { ...assistant, id: existing.id, publicToken: createPublicToken() } : assistant;
   localStorage.setItem("moataAssistants", JSON.stringify([assistantToSave]));
 }
 
@@ -462,6 +473,7 @@ function toAssistantRow(assistant, userId) {
     question_cards: assistant.setup.questionCards,
     photo_upload: assistant.setup.photoUpload,
     launch_style: assistant.setup.launchStyle,
+    public_token: assistant.publicToken || createPublicToken(),
     brand_color: assistant.setup.brandColor,
     assistant_language: assistant.setup.assistantLanguage,
     customer_free_text: assistant.setup.customerFreeText,
@@ -474,6 +486,7 @@ function toAssistantRow(assistant, userId) {
 function fromAssistantRow(row) {
   return {
     id: row.id,
+    publicToken: row.public_token || row.id,
     status: row.status || "Setup received",
     createdAt: row.created_at,
     business: {
@@ -514,11 +527,21 @@ async function getPublicAssistant(id) {
   if (!assistantPreviewRoot || !id) return null;
   const supabase = await getSupabaseClient();
   if (!supabase) return null;
-  const { data, error } = await supabase
+  let query = supabase
     .from("assistants")
     .select("*")
-    .eq("id", id)
+    .or(`public_token.eq.${id},and(public_token.is.null,id.eq.${id})`)
     .single();
+  let { data, error } = await query;
+  if (error?.message?.includes("public_token")) {
+    const fallback = await supabase
+      .from("assistants")
+      .select("*")
+      .eq("id", id)
+      .single();
+    data = fallback.data;
+    error = fallback.error;
+  }
   if (error || !data) return null;
   return fromAssistantRow(data);
 }
@@ -540,8 +563,9 @@ async function renderDashboard() {
     return;
   }
 
-  const publicLink = new URL(`assistant.html?id=${encodeURIComponent(assistant.id)}`, window.location.href).href;
-  const embedCode = `<script src="https://www.moata.fr/widget.js" data-assistant="${assistant.id}"></script>`;
+  const deliveryToken = assistant.publicToken || assistant.id;
+  const publicLink = new URL(`assistant.html?id=${encodeURIComponent(deliveryToken)}`, window.location.href).href;
+  const embedCode = `<script src="https://www.moata.fr/widget.js" data-assistant="${deliveryToken}"></script>`;
   const view = new URLSearchParams(window.location.search).get("view") || "dashboard";
   const sectionMap = {
     dashboard: renderDashboardHome,
@@ -628,6 +652,7 @@ function renderDashboardAccount({ currentUser, userName, userEmail }) {
 }
 
 function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
+  const canAccessDelivery = isAssistantActive(assistant);
   return `
     <section class="dashboard-single">
       <article class="dashboard-panel">
@@ -648,29 +673,40 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
           <div><dt>Services</dt><dd>${escapeHtml(assistant.setup.services || "-")}</dd></div>
           <div><dt>Rules to avoid</dt><dd>${escapeHtml(assistant.setup.rules || "-")}</dd></div>
         </dl>
-        <div class="dashboard-code-row">
-          <div>
-            <strong>Public link</strong>
-            <p>Send this link directly to customers or use it as a QR code.</p>
+        ${canAccessDelivery ? `
+          <div class="dashboard-code-row">
+            <div>
+              <strong>Public link</strong>
+              <p>Send this link directly to customers or use it as a QR code.</p>
+            </div>
+            <button class="button button-light copy-button" data-copy="${escapeHtml(publicLink)}" type="button">Copy Link</button>
           </div>
-          <button class="button button-light copy-button" data-copy="${escapeHtml(publicLink)}" type="button">Copy Link</button>
-        </div>
-        <code class="dashboard-code">${escapeHtml(publicLink)}</code>
-        <div class="dashboard-code-row">
-          <div>
-            <strong>Embed code</strong>
-            <p>Paste this on the business website to open the diagnostic.</p>
+          <code class="dashboard-code">${escapeHtml(publicLink)}</code>
+          <div class="dashboard-code-row">
+            <div>
+              <strong>Embed code</strong>
+              <p>Paste this on the business website to open the diagnostic.</p>
+            </div>
+            <button class="button button-light copy-button" data-copy="${escapeHtml(embedCode)}" type="button">Copy Code</button>
           </div>
-          <button class="button button-light copy-button" data-copy="${escapeHtml(embedCode)}" type="button">Copy Code</button>
-        </div>
-        <code class="dashboard-code">${escapeHtml(embedCode)}</code>
+          <code class="dashboard-code">${escapeHtml(embedCode)}</code>
+        ` : `
+          <div class="dashboard-locked-delivery">
+            <strong>Public link and embed code are locked</strong>
+            <p>Activate the subscription before using the final hosted URL or website embed code.</p>
+            <a class="button" href="${getDashboardUrl("billing", assistant.id)}">Go to Billing</a>
+          </div>
+        `}
         <div class="compact-actions">
-          <a class="button" href="${publicLink}">Test Assistant</a>
           <a class="button button-light" href="request.html">Edit Assistant Setup</a>
         </div>
       </article>
     </section>
   `;
+}
+
+function isAssistantActive(assistant) {
+  return ["active", "paid", "live"].includes(String(assistant.status || "").toLowerCase());
 }
 
 function renderDashboardBilling() {
@@ -1095,6 +1131,11 @@ function slugify(value) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
+}
+
+function createPublicToken() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `moata-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
 function formatEmailBody(payload) {

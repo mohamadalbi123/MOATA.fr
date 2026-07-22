@@ -701,103 +701,160 @@ p {
 }
 
 .pricing-page-main {
-  width: min(1040px, calc(100% - 36px));
+  width: min(1080px, calc(100% - 36px));
   margin: 0 auto;
-  padding: clamp(34px, 6vw, 72px) 0 72px;
+  padding: clamp(34px, 5vw, 58px) 0 72px;
 }
 
-.pricing-simple {
-  display: grid;
-  grid-template-columns: minmax(0, 0.85fr) minmax(320px, 0.75fr);
-  gap: 24px;
-  align-items: start;
+.pricing-header {
+  max-width: 720px;
+  margin-bottom: 24px;
 }
 
-.pricing-simple-copy {
-  padding-top: 18px;
-}
-
-.pricing-simple-copy h1 {
-  max-width: 620px;
-  font-size: clamp(34px, 4.6vw, 54px);
+.pricing-header h1 {
+  font-size: clamp(34px, 4.4vw, 52px);
   line-height: 1.05;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
-.pricing-simple-copy p:not(.eyebrow) {
-  max-width: 560px;
+.pricing-header p:not(.eyebrow) {
   color: var(--muted);
   font-size: 17px;
   line-height: 1.55;
+  margin-bottom: 0;
 }
 
-.pricing-small-notes {
+.pricing-layout {
   display: grid;
-  gap: 8px;
-  margin-top: 24px;
-  max-width: 420px;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  gap: 18px;
+  align-items: stretch;
 }
 
-.pricing-small-notes span {
+.pricing-plan,
+.pricing-includes,
+.pricing-faq article {
   border: 1px solid var(--line);
-  background: var(--soft);
-  padding: 12px 14px;
-  color: var(--black);
-  font-weight: 800;
-}
-
-.pricing-simple-card {
-  border: 1px solid var(--black);
   background: var(--white);
-  padding: 28px;
 }
 
-.pricing-simple-card > strong {
+.pricing-plan {
+  display: flex;
+  flex-direction: column;
+  padding: 26px;
+  border-color: var(--black);
+}
+
+.pricing-plan-top {
+  margin-bottom: 24px;
+}
+
+.pricing-plan-top span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.pricing-plan-top strong {
   display: block;
   color: var(--black);
-  font-size: clamp(38px, 5vw, 58px);
+  font-size: clamp(38px, 5vw, 56px);
   line-height: 1;
+  margin-bottom: 12px;
+}
+
+.pricing-plan-top small {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.pricing-plan-top p,
+.pricing-fineprint {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.pricing-plan .button {
+  width: 100%;
+  margin-top: auto;
+}
+
+.pricing-fineprint {
+  margin: 14px 0 0;
+}
+
+.pricing-includes {
+  padding: 26px;
+}
+
+.pricing-includes h2 {
+  font-size: 26px;
   margin-bottom: 20px;
 }
 
-.pricing-simple-card small {
-  color: var(--muted);
-  font-size: 16px;
+.pricing-feature-groups {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
 }
 
-.pricing-simple-card ul {
+.pricing-feature-groups h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.pricing-feature-groups ul {
   list-style: none;
-  padding: 18px 0;
+  padding: 0;
   margin: 0;
   display: grid;
   gap: 9px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
 }
 
-.pricing-simple-card li {
+.pricing-feature-groups li {
   position: relative;
-  padding-left: 18px;
-  color: var(--ink);
+  padding-left: 16px;
+  color: var(--muted);
   font-size: 14px;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
-.pricing-simple-card li::before {
+.pricing-feature-groups li::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 0.58em;
-  width: 6px;
-  height: 6px;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
   background: var(--black);
 }
 
-.pricing-simple-card p:not(.eyebrow) {
-  margin: 16px 0;
+.pricing-faq {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.pricing-faq article {
+  padding: 18px;
+}
+
+.pricing-faq h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.pricing-faq p {
   color: var(--muted);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
+  margin-bottom: 0;
 }
 
 .contact-options {
@@ -1973,6 +2030,23 @@ textarea {
   line-height: 1.5;
   white-space: nowrap;
   overflow-x: auto;
+}
+
+.dashboard-locked-delivery {
+  margin-top: 22px;
+  border: 1px solid var(--black);
+  background: var(--soft);
+  padding: 18px;
+}
+
+.dashboard-locked-delivery strong {
+  display: block;
+  color: var(--black);
+  margin-bottom: 6px;
+}
+
+.dashboard-locked-delivery p {
+  margin-bottom: 14px;
 }
 
 .color-dot {
