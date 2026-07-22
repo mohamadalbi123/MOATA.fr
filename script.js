@@ -833,7 +833,7 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
           </div>
         `}
         <div class="compact-actions">
-          <a class="button button-light" href="request.html?edit=${encodeURIComponent(assistant.id)}">Edit Assistant Setup</a>
+          <a class="button button-light" href="${escapeHtml(getAssistantEditUrl(assistant))}">Edit Assistant Setup</a>
         </div>
       </article>
     </section>
@@ -1324,12 +1324,33 @@ function bindAccountActions(currentUser) {
 async function hydrateBuilderForEdit() {
   const editId = new URLSearchParams(window.location.search).get("edit");
   if (!editId) return;
-  const assistants = await getAssistants();
+  const urlAssistant = getAssistantFromUrl();
   const cachedAssistant = getCachedEditAssistant(editId);
+  if (urlAssistant || cachedAssistant) {
+    fillBuilderForm(urlAssistant || cachedAssistant);
+    if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
+  }
+  const assistants = await getAssistants();
   const assistant = assistants.find((item) => item.id === editId) || cachedAssistant || assistants[0];
   if (!assistant) return;
   fillBuilderForm(assistant);
   if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
+}
+
+function getAssistantEditUrl(assistant) {
+  const url = `request.html?edit=${encodeURIComponent(assistant.id)}`;
+  if (window.location.protocol !== "file:") return url;
+  return `${url}&data=${encodeURIComponent(JSON.stringify(assistant))}`;
+}
+
+function getAssistantFromUrl() {
+  const rawData = new URLSearchParams(window.location.search).get("data");
+  if (!rawData) return null;
+  try {
+    return JSON.parse(rawData);
+  } catch {
+    return null;
+  }
 }
 
 function getCachedEditAssistant(editId) {
