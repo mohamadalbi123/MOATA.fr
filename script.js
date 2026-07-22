@@ -21,6 +21,7 @@ const googleAuthButton = document.getElementById("googleAuthButton");
 const brandColorPicker = document.querySelector("input[name='brandColorPicker']");
 const customBrandColor = document.querySelector("input[name='customBrandColor']");
 const headerActions = document.querySelector(".header-actions");
+const pricingPlanButtons = document.querySelectorAll("[data-pricing-plan]");
 
 updateAuthHeader();
 guardBuilderForExistingAssistant();
@@ -43,6 +44,13 @@ if (processStepCards.length) {
     processStepCards[activeProcessStep].classList.add("active");
     processStepCards[activeProcessStep].scrollIntoView({ behavior: "smooth", block: "center" });
   }, 2600);
+}
+
+if (pricingPlanButtons.length) {
+  pricingPlanButtons.forEach((button) => {
+    button.addEventListener("click", () => setPricingPlan(button.dataset.pricingPlan || "monthly"));
+  });
+  setPricingPlan("monthly");
 }
 
 if (industryInputs.length && questionCards.length) {
@@ -500,6 +508,9 @@ function fromAssistantRow(row) {
     id: row.id,
     publicToken: row.public_token || row.id,
     status: row.status || "Setup received",
+    subscriptionStatus: row.subscription_status || "inactive",
+    subscriptionCurrentPeriodEnd: row.subscription_current_period_end || "",
+    billingInterval: row.billing_interval || "",
     createdAt: row.created_at,
     business: {
       name: row.business_name || "My Business",
@@ -602,6 +613,7 @@ async function renderDashboard() {
   bindCopyButtons();
   bindCheckoutButton(currentUser);
   bindAccountActions(currentUser);
+  bindBillingSwitcher();
 }
 
 function renderDashboardNav(activeView, assistantId) {
@@ -704,8 +716,8 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
           <code class="dashboard-code">${escapeHtml(embedCode)}</code>
         ` : `
           <div class="dashboard-locked-delivery">
-            <strong>Public link and embed code are locked</strong>
-            <p>Activate the subscription before using the final hosted URL or website embed code.</p>
+            <strong>Activate your assistant</strong>
+            <p>Your setup is saved. Complete checkout to publish the live diagnostic link and website embed code.</p>
             <a class="button" href="${getDashboardUrl("billing", assistant.id)}">Go to Billing</a>
           </div>
         `}
@@ -718,18 +730,27 @@ function renderDashboardAssistant({ assistant, publicLink, embedCode }) {
 }
 
 function isAssistantActive(assistant) {
-  return ["active", "paid", "live"].includes(String(assistant.status || "").toLowerCase());
+  const paidStatus = String(assistant.subscriptionStatus || assistant.status || "").toLowerCase();
+  const periodEnd = assistant.subscriptionCurrentPeriodEnd ? new Date(assistant.subscriptionCurrentPeriodEnd) : null;
+  const periodIsCurrent = !periodEnd || periodEnd.getTime() > Date.now();
+  return ["active", "paid", "live", "trialing"].includes(paidStatus) && periodIsCurrent;
 }
 
-function renderDashboardBilling() {
+function renderDashboardBilling({ assistant }) {
   return `
     <section class="dashboard-single">
       <article class="dashboard-panel dashboard-billing-card">
         <p class="eyebrow">Billing</p>
-        <h2>€39 / month</h2>
-        <p>Includes your AI diagnostic assistant, hosted diagnostic page, website embed code, business dashboard, lead management, email notifications, custom branding, updates, and email support.</p>
+        <h2>Choose billing</h2>
+        <p>Activate your assistant monthly or yearly. The assistant should stop working automatically when the paid period ends.</p>
+        <div class="billing-switcher" role="group" aria-label="Billing period">
+          <label><input type="radio" name="billingInterval" value="monthly" checked /> <span>Monthly</span></label>
+          <label><input type="radio" name="billingInterval" value="yearly" /> <span>Yearly</span></label>
+        </div>
+        <p class="billing-price" id="billingPrice">€39 <span>/ month</span></p>
+        <p class="form-note" id="billingPlanNote">Pay monthly. Cancel before the next billing period.</p>
         <div class="compact-actions">
-          <button class="button" id="checkoutButton" type="button">Continue to Checkout</button>
+          <button class="button" id="checkoutButton" type="button" data-assistant-id="${escapeHtml(assistant.id)}">Continue to Checkout</button>
           <a class="button button-light" href="${getDashboardUrl("dashboard")}">Back to Dashboard</a>
         </div>
         <p class="form-note" id="checkoutNote" aria-live="polite"></p>
@@ -761,7 +782,7 @@ function getDashboardDescription(view) {
     dashboard: "Choose what you want to manage.",
     account: "Manage your profile, email, login method, and password reset.",
     assistant: "Review your assistant setup, test it, copy the public link, and copy the website embed code.",
-    billing: "Manage the MOATA monthly plan and secure checkout."
+    billing: "Manage the MOATA subscription plan and secure checkout."
   };
   return descriptions[view] || "Choose what you want to manage from your MOATA client portal.";
 }
@@ -782,6 +803,18 @@ async function renderAssistantPreview() {
     }
   };
   const data = assistant || fallback;
+  if (assistant && !isAssistantActive(data)) {
+    assistantPreviewRoot.innerHTML = `
+      <section class="assistant-shell">
+        <div class="assistant-page-header">
+          <p class="eyebrow">Assistant unavailable</p>
+          <h1>This diagnostic assistant is not active right now.</h1>
+          <p>The business subscription is inactive or the paid period has ended. Please contact the business directly.</p>
+        </div>
+      </section>
+    `;
+    return;
+  }
   const questions = (data.setup.questionCards || "Main concern, Budget, Upload Photo")
     .split(",")
     .map((item) => item.trim())
@@ -1053,15 +1086,32 @@ function bindCopyButtons() {
   });
 }
 
+function setPricingPlan(plan) {
+  const isYearly = plan === "yearly";
+  document.querySelectorAll("[data-pricing-plan]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.pricingPlan === plan);
+  });
+  const label = document.getElementById("pricingPlanLabel");
+  const amount = document.getElementById("pricingAmount");
+  const period = document.getElementById("pricingPeriod");
+  const note = document.getElementById("pricingSaveNote");
+  if (label) label.textContent = isYearly ? "Yearly" : "Monthly";
+  if (amount) amount.textContent = isYearly ? "€390" : "€39";
+  if (period) period.textContent = isYearly ? "/ year" : "/ month";
+  if (note) note.textContent = isYearly ? "Paid yearly. Equivalent to €32.50/month." : "Pay monthly. Cancel before the next billing period.";
+}
+
 function bindCheckoutButton(currentUser) {
-  document.getElementById("checkoutButton")?.addEventListener("click", async () => {
+  document.getElementById("checkoutButton")?.addEventListener("click", async (event) => {
     const note = document.getElementById("checkoutNote");
     note.textContent = "Opening secure checkout...";
+    const interval = document.querySelector("input[name='billingInterval']:checked")?.value || "monthly";
+    const assistantId = event.currentTarget.dataset.assistantId || "";
     try {
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: currentUser?.email || "" })
+        body: JSON.stringify({ email: currentUser?.email || "", interval, assistantId })
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "Checkout failed");
@@ -1070,6 +1120,20 @@ function bindCheckoutButton(currentUser) {
       note.textContent = "Checkout is not ready yet. Check Stripe keys and price ID in Vercel.";
     }
   });
+}
+
+function bindBillingSwitcher() {
+  const billingInputs = document.querySelectorAll("input[name='billingInterval']");
+  if (!billingInputs.length) return;
+  const price = document.getElementById("billingPrice");
+  const note = document.getElementById("billingPlanNote");
+  const updateBillingCopy = () => {
+    const interval = document.querySelector("input[name='billingInterval']:checked")?.value || "monthly";
+    if (price) price.innerHTML = interval === "yearly" ? "€390 <span>/ year</span>" : "€39 <span>/ month</span>";
+    if (note) note.textContent = interval === "yearly" ? "Paid yearly. Equivalent to €32.50/month." : "Pay monthly. Cancel before the next billing period.";
+  };
+  billingInputs.forEach((input) => input.addEventListener("change", updateBillingCopy));
+  updateBillingCopy();
 }
 
 function bindAccountActions(currentUser) {

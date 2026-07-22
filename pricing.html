@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="MOATA pricing for AI diagnostic assistants. One monthly plan for businesses that need a hosted diagnostic page, website embed code, dashboard, and service recommendations."
+      content="MOATA pricing for AI diagnostic assistants. Monthly and yearly billing for businesses that need a hosted diagnostic page, website embed code, dashboard, and service recommendations."
     />
     <title>Pricing | MOATA</title>
     <link rel="stylesheet" href="styles.css" />
@@ -33,8 +33,13 @@
           <p>Everything you need to build, test, share, and embed your AI diagnostic assistant.</p>
         </div>
         <article class="pricing-simple-card">
-          <p class="eyebrow">Monthly</p>
-          <strong>€39 <small>/ month</small></strong>
+          <div class="pricing-toggle" role="group" aria-label="Billing period">
+            <button class="active" type="button" data-pricing-plan="monthly">Monthly</button>
+            <button type="button" data-pricing-plan="yearly">Yearly</button>
+          </div>
+          <p class="eyebrow" id="pricingPlanLabel">Monthly</p>
+          <strong><span id="pricingAmount">€39</span> <small id="pricingPeriod">/ month</small></strong>
+          <p class="pricing-save-note" id="pricingSaveNote">Pay monthly. Cancel before the next billing period.</p>
           <ul>
             <li>AI Diagnostic Assistant</li>
             <li>AI service recommendations</li>

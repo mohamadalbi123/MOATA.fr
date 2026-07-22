@@ -742,6 +742,31 @@ p {
   padding: 28px;
 }
 
+.pricing-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  padding: 4px;
+  margin-bottom: 18px;
+}
+
+.pricing-toggle button {
+  min-height: 38px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pricing-toggle button.active {
+  background: var(--white);
+  color: var(--black);
+  border: 1px solid var(--black);
+}
+
 .pricing-simple-card > strong {
   display: block;
   color: var(--black);
@@ -788,6 +813,10 @@ p {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.pricing-save-note {
+  margin-top: -8px !important;
 }
 
 .contact-options {
@@ -1971,6 +2000,55 @@ textarea {
 .dashboard-code-row p {
   margin-top: 4px;
   line-height: 1.5;
+}
+
+.billing-switcher {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  border: 1px solid var(--line);
+  background: var(--soft);
+  padding: 4px;
+  margin: 20px 0 16px;
+}
+
+.billing-switcher label {
+  margin: 0;
+  display: block;
+}
+
+.billing-switcher input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.billing-switcher span {
+  display: grid;
+  place-items: center;
+  min-height: 42px;
+  color: var(--muted);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.billing-switcher input:checked + span {
+  background: var(--white);
+  color: var(--black);
+  border: 1px solid var(--black);
+}
+
+.billing-price {
+  color: var(--black) !important;
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0 0 8px;
+}
+
+.billing-price span {
+  color: var(--muted);
+  font-size: 15px;
 }
 
 .dashboard-code {

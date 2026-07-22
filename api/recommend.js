@@ -29,6 +29,10 @@ export default async function handler(request, response) {
       response.status(404).json({ error: "Assistant not found" });
       return;
     }
+    if (!isAssistantActive(assistant)) {
+      response.status(402).json({ error: "Assistant subscription is inactive" });
+      return;
+    }
 
     let warning = "";
     let recommendation;
@@ -48,6 +52,14 @@ export default async function handler(request, response) {
       message: error.message
     });
   }
+}
+
+function isAssistantActive(assistant = {}) {
+  const status = String(assistant.subscription_status || assistant.status || "").toLowerCase();
+  const allowedStatus = ["active", "paid", "live", "trialing"].includes(status);
+  const periodEnd = assistant.subscription_current_period_end ? new Date(assistant.subscription_current_period_end) : null;
+  const periodIsCurrent = !periodEnd || periodEnd.getTime() > Date.now();
+  return allowedStatus && periodIsCurrent;
 }
 
 async function getAssistant(id) {
