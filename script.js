@@ -95,6 +95,14 @@ if (wizardSteps.length) {
     wizardNext.dataset.bound = "true";
     wizardNext.addEventListener("click", window.moataNextWizardStep);
   }
+  window.moataWizardDebug = () => ({
+    step: window.moataWizardStep,
+    activeTitle: document.querySelector(".wizard-step.active")?.dataset.stepTitle || "",
+    activeHeading: document.querySelector(".wizard-step.active h2")?.textContent || "",
+    note: wizardNote?.textContent || "",
+    businessName: document.querySelector('input[name="businessName"]')?.value || "",
+    nextBound: wizardNext?.dataset.bound || ""
+  });
 }
 
 if (brandColorPicker && customBrandColor) {
@@ -1349,7 +1357,10 @@ async function hydrateBuilderForEdit() {
   if (!editId) return;
   const assistants = await getAssistants();
   const assistant = assistants.find((item) => item.id === editId) || immediateAssistant || assistants[0];
-  if (!assistant) return;
+  if (!assistant) {
+    if (requestNote) requestNote.textContent = "Could not load your saved assistant. Please login again from the dashboard, then click Edit Assistant Setup.";
+    return;
+  }
   fillBuilderForm(assistant);
   if (requestNote) requestNote.textContent = "Editing your saved assistant. Saving will update this assistant and refresh the public link/code after checkout.";
 }
