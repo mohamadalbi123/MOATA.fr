@@ -1552,6 +1552,20 @@ p {
   display: none;
 }
 
+.wizard-note {
+  margin: 12px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--black);
+  background: var(--white);
+  color: var(--black);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.wizard-note[hidden] {
+  display: none;
+}
+
 .intake-form section {
   background: var(--white);
   border: 1px solid var(--line);

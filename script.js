@@ -15,6 +15,7 @@ const wizardSteps = document.querySelectorAll(".wizard-step");
 const wizardProgress = document.querySelectorAll(".wizard-progress span");
 const wizardBack = document.getElementById("wizardBack");
 const wizardNext = document.getElementById("wizardNext");
+const wizardNote = document.getElementById("wizardNote");
 const formActions = document.querySelector("#requestForm .form-actions");
 const dashboardRoot = document.getElementById("dashboardRoot");
 const assistantPreviewRoot = document.getElementById("assistantPreviewRoot");
@@ -81,6 +82,7 @@ if (wizardSteps.length) {
 
   wizardNext?.addEventListener("click", () => {
     if (!validateWizardStep(wizardSteps[currentWizardStep])) return;
+    setWizardMessage("");
     currentWizardStep = Math.min(wizardSteps.length - 1, currentWizardStep + 1);
     showWizardStep(currentWizardStep);
   });
@@ -1453,6 +1455,7 @@ function escapeHtml(value = "") {
 }
 
 function showWizardStep(index) {
+  setWizardMessage("");
   wizardSteps.forEach((step, stepIndex) => {
     step.classList.toggle("active", stepIndex === index);
   });
@@ -1477,11 +1480,25 @@ function validateWizardStep(step) {
   for (const field of fields) {
     normalizeUrlField(field);
     if (!field.checkValidity()) {
+      setWizardMessage(getValidationMessage(field));
       field.reportValidity();
       return false;
     }
   }
   return true;
+}
+
+function setWizardMessage(message = "") {
+  if (!wizardNote) return;
+  wizardNote.textContent = message;
+  wizardNote.hidden = !message;
+}
+
+function getValidationMessage(field) {
+  const label = field.closest("label")?.childNodes?.[0]?.textContent?.trim() || field.name || "This field";
+  if (field.validity.valueMissing) return `${label} is required before you can continue.`;
+  if (field.validity.typeMismatch || field.validity.patternMismatch) return `${label} must be a valid link, for example https://example.com.`;
+  return `${label} needs to be checked before you can continue.`;
 }
 
 function normalizeUrlField(field) {
